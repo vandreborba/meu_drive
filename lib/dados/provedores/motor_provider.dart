@@ -12,7 +12,7 @@ import '../servicos/ponte_motor_servico.dart';
 import '../servicos/syncthing_rest_servico.dart';
 
 /// Fase geral do motor de sincronização (embutido no app).
-enum FaseMotor { verificando, iniciando, conectado, parado, erro }
+enum FaseMotor { verificando, precisaPermissao, iniciando, conectado, parado, erro }
 
 /// Estado completo mostrado pela interface.
 class EstadoMotor {
@@ -109,7 +109,11 @@ class MotorNotifier extends Notifier<EstadoMotor> {
     state = state.copyWith(fase: FaseMotor.verificando, limparErro: true);
     _log('Preparando o motor...');
     if (!state.temPermissaoArquivos) {
-      _log('Sem acesso a todos os arquivos: as pastas podem não aparecer.');
+      // Sem acesso aos arquivos não dá para importar a config do Syncthing-Fork
+      // nem ler as pastas — então não iniciamos o motor ainda.
+      _log('Sem acesso a todos os arquivos. Aguardando a permissão.');
+      state = state.copyWith(fase: FaseMotor.precisaPermissao);
+      return;
     }
     await _ponte.pedirNotificacoes();
     final importou = await _ponte.importarConfigMotor();

@@ -1,6 +1,16 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
+/// Espaço do armazenamento do aparelho.
+class EspacoArmazenamento {
+  final int totalBytes;
+  final int livreBytes;
+
+  const EspacoArmazenamento({required this.totalBytes, required this.livreBytes});
+
+  int get usadoBytes => totalBytes - livreBytes;
+}
+
 /// Configuração lida do `config.xml` do motor.
 class ConfigMotor {
   /// Endereço do GUI no formato `host:porta` (ex.: `127.0.0.1:41231`).
@@ -104,6 +114,16 @@ class PonteMotorServico {
   Future<void> pedirNotificacoes() async {
     await _canal.invokeMethod<bool>('pedirNotificacoes');
     debugPrint('[Ponte] pedirNotificacoes chamado');
+  }
+
+  /// Espaço do armazenamento do aparelho (em bytes).
+  Future<EspacoArmazenamento?> espacoArmazenamento() async {
+    final mapa = await _canal.invokeMethod<Map<dynamic, dynamic>>('espacoArmazenamento');
+    if (mapa == null || mapa.isEmpty) return null;
+    final total = (mapa['total'] as num?)?.toInt() ?? 0;
+    final livre = (mapa['livre'] as num?)?.toInt() ?? 0;
+    if (total <= 0) return null;
+    return EspacoArmazenamento(totalBytes: total, livreBytes: livre);
   }
 
   /// Se o app pode instalar APKs (origens desconhecidas).

@@ -1,4 +1,4 @@
-package com.vandre.meu_drive
+package com.vandreapps.meu_drive
 
 import android.app.Notification
 import android.app.NotificationChannel

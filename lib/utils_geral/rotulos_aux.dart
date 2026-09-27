@@ -5,6 +5,7 @@ import 'package:meu_drive/l10n/gerado/app_localizations.dart';
 String rotuloFaseMotor(AppLocalizations textos, FaseMotor fase) {
   return switch (fase) {
     FaseMotor.verificando => textos.faseVerificando,
+    FaseMotor.precisaPermissao => textos.fasePrecisaPermissao,
     FaseMotor.iniciando => textos.faseIniciando,
     FaseMotor.conectado => textos.faseConectado,
     FaseMotor.parado => textos.faseParado,

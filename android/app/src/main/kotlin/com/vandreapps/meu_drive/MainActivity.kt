@@ -1,4 +1,4 @@
-package com.vandre.meu_drive
+package com.vandreapps.meu_drive
 
 import android.Manifest
 import android.content.Intent
@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
+import android.os.StatFs
 import android.provider.Settings
 import android.util.Log
 import androidx.core.app.ActivityCompat
@@ -60,6 +61,7 @@ class MainActivity : FlutterActivity() {
                     pedirNotificacoes()
                     resultado.success(true)
                 }
+                "espacoArmazenamento" -> resultado.success(espacoArmazenamento())
                 "podeInstalarApks" -> resultado.success(podeInstalarApks())
                 "pedirPermissaoInstalar" -> {
                     pedirPermissaoInstalar()
@@ -226,6 +228,27 @@ class MainActivity : FlutterActivity() {
                 ),
                 101
             )
+        }
+    }
+
+    /** Espaço total e livre do armazenamento (em bytes). */
+    private fun espacoArmazenamento(): Map<String, Long> {
+        fun ler(caminho: String): Map<String, Long> {
+            val stat = StatFs(caminho)
+            return mapOf(
+                "total" to stat.blockCountLong * stat.blockSizeLong,
+                "livre" to stat.availableBlocksLong * stat.blockSizeLong,
+            )
+        }
+        return try {
+            ler(Environment.getExternalStorageDirectory().path)
+        } catch (e: Exception) {
+            Log.w(tag, "Falha ao ler espaço externo: $e")
+            try {
+                ler(Environment.getDataDirectory().path)
+            } catch (e2: Exception) {
+                emptyMap()
+            }
         }
     }
 

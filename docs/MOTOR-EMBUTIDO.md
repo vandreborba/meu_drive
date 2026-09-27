@@ -22,7 +22,7 @@ usuário.
   `packaging { jniLibs { useLegacyPackaging = true } }` para o `.so` ser extraído
   em `nativeLibraryDir`. O Android/SELinux **bloqueia executar de `filesDir`**;
   executar de `nativeLibraryDir` funciona.
-- Serviço: `android/app/src/main/kotlin/com/vandre/meu_drive/MotorService.kt`
+- Serviço: `android/app/src/main/kotlin/com/vandreapps/meu_drive/MotorService.kt`
   (foreground service `specialUse`, com notificação "Sincronizando em segundo
   plano"). Se o processo sair sozinho, o serviço reinicia (resolve o "fecha
   sozinho").

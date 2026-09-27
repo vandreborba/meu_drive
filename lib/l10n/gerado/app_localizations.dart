@@ -496,6 +496,132 @@ abstract class AppLocalizations {
   /// **'Verificar a cada'**
   String get verificarACada;
 
+  /// No description provided for @ajuda.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ajuda'**
+  String get ajuda;
+
+  /// No description provided for @ajudaManterSincronizado.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ligado: o Meu Drive mantém o motor de sincronização rodando e ativo em segundo plano (aparece uma notificação de que está sincronizando). Desligado: a sincronização é pausada — nada é enviado nem recebido —, mas os arquivos continuam no aparelho e nada é apagado.'**
+  String get ajudaManterSincronizado;
+
+  /// No description provided for @ajudaDetectarMudancas.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ligado: o motor observa as pastas em tempo real e sincroniza assim que um arquivo é criado, alterado ou apagado (sincronização quase instantânea). Desligado: economiza um pouco de bateria, e as mudanças passam a ser encontradas apenas na verificação periódica (opção \"Verificar a cada\").'**
+  String get ajudaDetectarMudancas;
+
+  /// No description provided for @ajudaVerificarACada.
+  ///
+  /// In pt, this message translates to:
+  /// **'De quanto em quanto tempo o motor faz uma varredura completa nas pastas para procurar mudanças. Serve de reforço quando a detecção em tempo real está desligada ou deixa passar algum evento. Em \"Desativado\", o motor só verifica quando você tocar em \"Verificar mudanças agora\".'**
+  String get ajudaVerificarACada;
+
+  /// No description provided for @verComo.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ver como'**
+  String get verComo;
+
+  /// No description provided for @modoLista.
+  ///
+  /// In pt, this message translates to:
+  /// **'Lista'**
+  String get modoLista;
+
+  /// No description provided for @modoGrade.
+  ///
+  /// In pt, this message translates to:
+  /// **'Grade'**
+  String get modoGrade;
+
+  /// No description provided for @ordenarPor.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ordenar por'**
+  String get ordenarPor;
+
+  /// No description provided for @ordenarNome.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nome'**
+  String get ordenarNome;
+
+  /// No description provided for @ordenarData.
+  ///
+  /// In pt, this message translates to:
+  /// **'Data de modificação'**
+  String get ordenarData;
+
+  /// No description provided for @ordenarTamanho.
+  ///
+  /// In pt, this message translates to:
+  /// **'Tamanho'**
+  String get ordenarTamanho;
+
+  /// No description provided for @ordemCrescente.
+  ///
+  /// In pt, this message translates to:
+  /// **'Crescente'**
+  String get ordemCrescente;
+
+  /// No description provided for @ordemDecrescente.
+  ///
+  /// In pt, this message translates to:
+  /// **'Decrescente'**
+  String get ordemDecrescente;
+
+  /// No description provided for @tamanhoMiniaturas.
+  ///
+  /// In pt, this message translates to:
+  /// **'Tamanho das miniaturas'**
+  String get tamanhoMiniaturas;
+
+  /// No description provided for @miniaturaPequena.
+  ///
+  /// In pt, this message translates to:
+  /// **'Pequenas'**
+  String get miniaturaPequena;
+
+  /// No description provided for @miniaturaMedia.
+  ///
+  /// In pt, this message translates to:
+  /// **'Médias'**
+  String get miniaturaMedia;
+
+  /// No description provided for @miniaturaGrande.
+  ///
+  /// In pt, this message translates to:
+  /// **'Grandes'**
+  String get miniaturaGrande;
+
+  /// No description provided for @abrirCom.
+  ///
+  /// In pt, this message translates to:
+  /// **'Abrir com outro app'**
+  String get abrirCom;
+
+  /// No description provided for @ampliada.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ampliada'**
+  String get ampliada;
+
+  /// No description provided for @toqueParaAmpliar.
+  ///
+  /// In pt, this message translates to:
+  /// **'Toque duas vezes para ampliar'**
+  String get toqueParaAmpliar;
+
+  /// No description provided for @maisOpcoes.
+  ///
+  /// In pt, this message translates to:
+  /// **'Mais opções'**
+  String get maisOpcoes;
+
   /// No description provided for @mostrarOcultos.
   ///
   /// In pt, this message translates to:
@@ -507,6 +633,36 @@ abstract class AppLocalizations {
   /// In pt, this message translates to:
   /// **'Ocultar arquivos ocultos'**
   String get ocultarOcultos;
+
+  /// No description provided for @armazenamento.
+  ///
+  /// In pt, this message translates to:
+  /// **'Armazenamento'**
+  String get armazenamento;
+
+  /// No description provided for @armazenamentoAparelho.
+  ///
+  /// In pt, this message translates to:
+  /// **'Armazenamento do aparelho'**
+  String get armazenamentoAparelho;
+
+  /// No description provided for @compartilhado.
+  ///
+  /// In pt, this message translates to:
+  /// **'Compartilhado'**
+  String get compartilhado;
+
+  /// No description provided for @livres.
+  ///
+  /// In pt, this message translates to:
+  /// **'livres'**
+  String get livres;
+
+  /// No description provided for @emUso.
+  ///
+  /// In pt, this message translates to:
+  /// **'em uso'**
+  String get emUso;
 
   /// No description provided for @backup.
   ///
@@ -789,6 +945,12 @@ abstract class AppLocalizations {
   /// In pt, this message translates to:
   /// **'Verificando'**
   String get faseVerificando;
+
+  /// No description provided for @fasePrecisaPermissao.
+  ///
+  /// In pt, this message translates to:
+  /// **'Precisa de permissão'**
+  String get fasePrecisaPermissao;
 
   /// No description provided for @faseIniciando.
   ///

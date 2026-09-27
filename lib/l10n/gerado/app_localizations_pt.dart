@@ -213,10 +213,91 @@ class AppLocalizationsPt extends AppLocalizations {
   String get verificarACada => 'Verificar a cada';
 
   @override
+  String get ajuda => 'Ajuda';
+
+  @override
+  String get ajudaManterSincronizado =>
+      'Ligado: o Meu Drive mantém o motor de sincronização rodando e ativo em segundo plano (aparece uma notificação de que está sincronizando). Desligado: a sincronização é pausada — nada é enviado nem recebido —, mas os arquivos continuam no aparelho e nada é apagado.';
+
+  @override
+  String get ajudaDetectarMudancas =>
+      'Ligado: o motor observa as pastas em tempo real e sincroniza assim que um arquivo é criado, alterado ou apagado (sincronização quase instantânea). Desligado: economiza um pouco de bateria, e as mudanças passam a ser encontradas apenas na verificação periódica (opção \"Verificar a cada\").';
+
+  @override
+  String get ajudaVerificarACada =>
+      'De quanto em quanto tempo o motor faz uma varredura completa nas pastas para procurar mudanças. Serve de reforço quando a detecção em tempo real está desligada ou deixa passar algum evento. Em \"Desativado\", o motor só verifica quando você tocar em \"Verificar mudanças agora\".';
+
+  @override
+  String get verComo => 'Ver como';
+
+  @override
+  String get modoLista => 'Lista';
+
+  @override
+  String get modoGrade => 'Grade';
+
+  @override
+  String get ordenarPor => 'Ordenar por';
+
+  @override
+  String get ordenarNome => 'Nome';
+
+  @override
+  String get ordenarData => 'Data de modificação';
+
+  @override
+  String get ordenarTamanho => 'Tamanho';
+
+  @override
+  String get ordemCrescente => 'Crescente';
+
+  @override
+  String get ordemDecrescente => 'Decrescente';
+
+  @override
+  String get tamanhoMiniaturas => 'Tamanho das miniaturas';
+
+  @override
+  String get miniaturaPequena => 'Pequenas';
+
+  @override
+  String get miniaturaMedia => 'Médias';
+
+  @override
+  String get miniaturaGrande => 'Grandes';
+
+  @override
+  String get abrirCom => 'Abrir com outro app';
+
+  @override
+  String get ampliada => 'Ampliada';
+
+  @override
+  String get toqueParaAmpliar => 'Toque duas vezes para ampliar';
+
+  @override
+  String get maisOpcoes => 'Mais opções';
+
+  @override
   String get mostrarOcultos => 'Mostrar arquivos ocultos';
 
   @override
   String get ocultarOcultos => 'Ocultar arquivos ocultos';
+
+  @override
+  String get armazenamento => 'Armazenamento';
+
+  @override
+  String get armazenamentoAparelho => 'Armazenamento do aparelho';
+
+  @override
+  String get compartilhado => 'Compartilhado';
+
+  @override
+  String get livres => 'livres';
+
+  @override
+  String get emUso => 'em uso';
 
   @override
   String get backup => 'Backup';
@@ -363,6 +444,9 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get faseVerificando => 'Verificando';
+
+  @override
+  String get fasePrecisaPermissao => 'Precisa de permissão';
 
   @override
   String get faseIniciando => 'Iniciando';

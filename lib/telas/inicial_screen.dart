@@ -49,7 +49,9 @@ class _InicialScreenState extends ConsumerState<InicialScreen> with WidgetsBindi
     final notificador = ref.read(motorProvider.notifier);
     notificador.atualizarPermissaoArquivos();
     final fase = ref.read(motorProvider).fase;
-    if (fase == FaseMotor.parado || fase == FaseMotor.erro) {
+    if (fase == FaseMotor.precisaPermissao ||
+        fase == FaseMotor.parado ||
+        fase == FaseMotor.erro) {
       notificador.atualizarTudo();
     }
   }
@@ -78,6 +80,18 @@ class _InicialScreenState extends ConsumerState<InicialScreen> with WidgetsBindi
       ),
       body: switch (estado.fase) {
         FaseMotor.verificando => _Progresso(texto: textos.verificandoMotor),
+        FaseMotor.precisaPermissao => _CartaoMensagem(
+            icone: MdiIcons.shieldAlertOutline,
+            titulo: textos.permissaoTitulo,
+            mensagem: textos.permissaoTexto,
+            acoes: [
+              FilledButton.icon(
+                onPressed: notificador.concederPermissaoArquivos,
+                icon: const Icon(MdiIcons.check),
+                label: Text(textos.concederPermissao),
+              ),
+            ],
+          ),
         FaseMotor.iniciando => _Progresso(texto: textos.iniciandoMotor),
         FaseMotor.parado => _Parado(onAcordar: notificador.acordarEConectar),
         FaseMotor.erro => _Erro(mensagem: estado.erro, onTentar: notificador.acordarEConectar),
@@ -321,6 +335,14 @@ class _ResumoMotor extends StatelessWidget {
       titulo = textos.tudoSincronizado;
     }
 
+    final totalBytes = estado.pastas.fold<int>(
+      0,
+      (soma, pasta) => soma + (estado.estados[pasta.id]?.bytes ?? 0),
+    );
+    final subtitulo = totalBytes > 0
+        ? '${estado.pastas.length} ${textos.nPastas} · ${formatarBytes(totalBytes)}'
+        : '${estado.pastas.length} ${textos.nPastas}';
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(14),
@@ -333,10 +355,7 @@ class _ResumoMotor extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(titulo, style: Theme.of(context).textTheme.titleMedium),
-                  Text(
-                    '${estado.pastas.length} ${textos.nPastas}',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
+                  Text(subtitulo, style: Theme.of(context).textTheme.bodySmall),
                 ],
               ),
             ),

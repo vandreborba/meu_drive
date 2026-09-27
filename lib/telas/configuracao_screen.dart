@@ -5,8 +5,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:meu_drive/dados/provedores/atualizacao_provider.dart';
 import 'package:meu_drive/dados/provedores/motor_provider.dart';
 import 'package:meu_drive/dados/provedores/tema_provider.dart';
+import 'package:meu_drive/dados/servicos/ponte_motor_servico.dart';
 import 'package:meu_drive/l10n/gerado/app_localizations.dart';
 import 'package:meu_drive/utils_geral/caixa_dialogo.dart';
+import 'package:meu_drive/utils_geral/formatadores_aux.dart';
 import 'package:meu_drive/utils_geral/rotulos_aux.dart';
 import 'package:meu_drive/widgets/cartao_atualizacao.dart';
 
@@ -21,6 +23,7 @@ class ConfiguracaoScreen extends ConsumerStatefulWidget {
 class _ConfiguracaoScreenState extends ConsumerState<ConfiguracaoScreen> {
   String? _endereco;
   String? _versao;
+  EspacoArmazenamento? _espaco;
 
   @override
   void initState() {
@@ -29,7 +32,22 @@ class _ConfiguracaoScreenState extends ConsumerState<ConfiguracaoScreen> {
     ref.read(atualizacaoProvider.notifier).versaoAtual().then((valor) {
       if (mounted) setState(() => _versao = valor);
     });
+    PonteMotorServico().espacoArmazenamento().then((valor) {
+      if (mounted) setState(() => _espaco = valor);
+    });
   }
+
+  String _textoEspaco(AppLocalizations textos) {
+    final espaco = _espaco;
+    if (espaco == null) return '-';
+    return '${formatarBytes(espaco.livreBytes)} ${textos.livres} · '
+        '${formatarBytes(espaco.usadoBytes)} ${textos.emUso}';
+  }
+
+  int _compartilhadoBytes(EstadoMotor estado) => estado.pastas.fold<int>(
+        0,
+        (soma, pasta) => soma + (estado.estados[pasta.id]?.bytes ?? 0),
+      );
 
   Future<void> _verificarAtualizacoes() async {
     final textos = AppLocalizations.of(context);
@@ -92,24 +110,30 @@ class _ConfiguracaoScreenState extends ConsumerState<ConfiguracaoScreen> {
             clipBehavior: Clip.antiAlias,
             child: Column(
               children: [
-                SwitchListTile(
-                  secondary: const Icon(MdiIcons.cloudSyncOutline),
-                  title: Text(textos.manterSincronizado),
-                  value: !estado.sincronizacaoPausada,
+                _linhaInterruptor(
+                  icone: MdiIcons.cloudSyncOutline,
+                  titulo: textos.manterSincronizado,
+                  valor: !estado.sincronizacaoPausada,
                   onChanged: _conectado ? _alternarManterSincronizado : null,
+                  explicacao: textos.ajudaManterSincronizado,
                 ),
                 const Divider(height: 1),
-                SwitchListTile(
-                  secondary: const Icon(MdiIcons.eyeOutline),
-                  title: Text(textos.detectarMudancas),
-                  value: _fsWatcherAtivo,
+                _linhaInterruptor(
+                  icone: MdiIcons.eyeOutline,
+                  titulo: textos.detectarMudancas,
+                  valor: _fsWatcherAtivo,
                   onChanged: _conectado ? _alternarFsWatcher : null,
+                  explicacao: textos.ajudaDetectarMudancas,
                 ),
                 const Divider(height: 1),
                 ListTile(
                   leading: const Icon(MdiIcons.clockOutline),
                   title: Text(textos.verificarACada),
                   subtitle: Text(_rotuloIntervalo(textos, _rescanSegundos)),
+                  trailing: _botaoAjuda(
+                    titulo: textos.verificarACada,
+                    explicacao: textos.ajudaVerificarACada,
+                  ),
                   onTap: _conectado ? _escolherIntervalo : null,
                 ),
                 const Divider(height: 1),
@@ -137,6 +161,26 @@ class _ConfiguracaoScreenState extends ConsumerState<ConfiguracaoScreen> {
                       onPressed: notificador.concederPermissaoArquivos,
                       child: Text(textos.concederPermissao),
                     ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          _titulo(context, textos.armazenamento),
+          Card(
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              children: [
+                ListTile(
+                  leading: const Icon(MdiIcons.harddisk),
+                  title: Text(textos.armazenamentoAparelho),
+                  subtitle: Text(_textoEspaco(textos)),
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(MdiIcons.folderNetwork),
+                  title: Text(textos.compartilhado),
+                  subtitle: Text(formatarBytes(_compartilhadoBytes(estado))),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 16),
@@ -188,6 +232,39 @@ class _ConfiguracaoScreenState extends ConsumerState<ConfiguracaoScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _linhaInterruptor({
+    required IconData icone,
+    required String titulo,
+    required bool valor,
+    required ValueChanged<bool>? onChanged,
+    required String explicacao,
+  }) {
+    return ListTile(
+      leading: Icon(icone),
+      title: Text(titulo),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Switch(value: valor, onChanged: onChanged),
+          _botaoAjuda(titulo: titulo, explicacao: explicacao),
+        ],
+      ),
+      onTap: onChanged == null ? null : () => onChanged(!valor),
+    );
+  }
+
+  Widget _botaoAjuda({required String titulo, required String explicacao}) {
+    return IconButton(
+      tooltip: AppLocalizations.of(context).ajuda,
+      icon: const Icon(MdiIcons.helpCircleOutline),
+      onPressed: () => MinhaCaixaDialogo.informar(
+        context,
+        titulo: titulo,
+        mensagem: explicacao,
       ),
     );
   }

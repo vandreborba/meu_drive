@@ -8,6 +8,14 @@ class ArmazenamentoServico {
   static const String _chaveSetupConcluido = 'setup_concluido';
   static const String _chavePortaGui = 'porta_gui';
   static const String _chaveTema = 'tema';
+  static const String _chaveExploradorPorPasta = 'explorador_por_pasta';
+
+  /// Preferências do explorador por diretório, como JSON.
+  Future<String?> lerExploradorJson() async =>
+      (await SharedPreferences.getInstance()).getString(_chaveExploradorPorPasta);
+
+  Future<void> salvarExploradorJson(String json) async =>
+      (await SharedPreferences.getInstance()).setString(_chaveExploradorPorPasta, json);
 
   Future<ThemeMode> lerTema() async {
     final prefs = await SharedPreferences.getInstance();

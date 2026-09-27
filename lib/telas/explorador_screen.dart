@@ -2,9 +2,13 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_material_design_icons/flutter_material_design_icons.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:open_filex/open_filex.dart';
 
+import 'package:meu_drive/dados/provedores/explorador_prefs_provider.dart';
 import 'package:meu_drive/l10n/gerado/app_localizations.dart';
+import 'package:meu_drive/telas/visualizador_screen.dart';
+import 'package:meu_drive/utils_geral/arquivos_aux.dart';
 import 'package:meu_drive/utils_geral/caixa_dialogo.dart';
 import 'package:meu_drive/utils_geral/formatadores_aux.dart';
 
@@ -32,8 +36,9 @@ class _ItemArquivo {
   });
 }
 
-/// Explorador de arquivos com trilha de navegação (breadcrumb).
-class ExploradorScreen extends StatefulWidget {
+/// Explorador de arquivos com trilha, miniaturas de fotos, ordenação e modos
+/// de visualização (lista/grade).
+class ExploradorScreen extends ConsumerStatefulWidget {
   final String caminhoInicial;
   final String titulo;
 
@@ -48,10 +53,10 @@ class ExploradorScreen extends StatefulWidget {
   });
 
   @override
-  State<ExploradorScreen> createState() => _ExploradorScreenState();
+  ConsumerState<ExploradorScreen> createState() => _ExploradorScreenState();
 }
 
-class _ExploradorScreenState extends State<ExploradorScreen> {
+class _ExploradorScreenState extends ConsumerState<ExploradorScreen> {
   final ScrollController _trilha = ScrollController();
   late final List<_Nivel> _pilha = [
     _Nivel(caminho: widget.caminhoInicial, rotulo: widget.titulo),
@@ -105,7 +110,6 @@ class _ExploradorScreenState extends State<ExploradorScreen> {
       final itens = <_ItemArquivo>[];
       for (final entrada in entradas) {
         final nome = entrada.path.split('/').where((p) => p.isNotEmpty).last;
-        // Esconde itens internos do Syncthing (.st*, .trashed-*) e dotfiles.
         if (!_mostrarOcultos && nome.startsWith('.')) continue;
         try {
           final tipo = await FileSystemEntity.type(entrada.path, followLinks: false);
@@ -131,10 +135,6 @@ class _ExploradorScreenState extends State<ExploradorScreen> {
           // Ignora entradas inacessíveis.
         }
       }
-      itens.sort((a, b) {
-        if (a.ehDiretorio != b.ehDiretorio) return a.ehDiretorio ? -1 : 1;
-        return a.nome.toLowerCase().compareTo(b.nome.toLowerCase());
-      });
       if (!mounted) return;
       setState(() {
         _itens = itens;
@@ -158,9 +158,45 @@ class _ExploradorScreenState extends State<ExploradorScreen> {
     });
   }
 
+  List<_ItemArquivo> _ordenar(List<_ItemArquivo> itens, ExploradorPrefs prefs) {
+    final copia = [...itens];
+    copia.sort((a, b) {
+      if (a.ehDiretorio != b.ehDiretorio) return a.ehDiretorio ? -1 : 1;
+      final int resultado;
+      switch (prefs.ordenacao) {
+        case OrdenacaoArquivo.nome:
+          resultado = a.nome.toLowerCase().compareTo(b.nome.toLowerCase());
+        case OrdenacaoArquivo.data:
+          resultado = (a.modificado ?? DateTime(0)).compareTo(b.modificado ?? DateTime(0));
+        case OrdenacaoArquivo.tamanho:
+          resultado = a.tamanho.compareTo(b.tamanho);
+      }
+      return prefs.ascendente ? resultado : -resultado;
+    });
+    return copia;
+  }
+
   Future<void> _abrirItem(_ItemArquivo item) async {
     if (item.ehDiretorio) {
       _entrarNaPasta(item);
+      return;
+    }
+    if (ehArquivoDeImagem(item.nome)) {
+      final prefs = ref.read(exploradorPrefsProvider)[_pilha.last.caminho] ??
+          const ExploradorPrefs();
+      final imagens = _ordenar(_itens, prefs)
+          .where((i) => !i.ehDiretorio && ehArquivoDeImagem(i.nome))
+          .map((i) => i.caminho)
+          .toList(growable: false);
+      final indice = imagens.indexOf(item.caminho);
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => VisualizadorScreen(
+            caminhos: imagens,
+            indiceInicial: indice < 0 ? 0 : indice,
+          ),
+        ),
+      );
       return;
     }
     final resultado = await OpenFilex.open(item.caminho);
@@ -173,11 +209,48 @@ class _ExploradorScreenState extends State<ExploradorScreen> {
     }
   }
 
+  // ==================== PREFERÊNCIAS ====================
+
+  Future<void> _aoMenu(String valor) async {
+    // As preferências de organização são por diretório.
+    final caminho = _pilha.last.caminho;
+    final prefs = ref.read(exploradorPrefsProvider.notifier);
+    switch (valor) {
+      case 'modo_lista':
+        await prefs.definirModo(caminho, ModoVisualizacao.lista);
+      case 'modo_grade':
+        await prefs.definirModo(caminho, ModoVisualizacao.grade);
+      case 'ord_nome':
+        await prefs.definirOrdenacao(caminho, OrdenacaoArquivo.nome);
+      case 'ord_data':
+        await prefs.definirOrdenacao(caminho, OrdenacaoArquivo.data);
+      case 'ord_tamanho':
+        await prefs.definirOrdenacao(caminho, OrdenacaoArquivo.tamanho);
+      case 'ord_asc':
+        await prefs.definirAscendente(caminho, true);
+      case 'ord_desc':
+        await prefs.definirAscendente(caminho, false);
+      case 'min_0':
+        await prefs.definirTamanhoMiniatura(caminho, 0);
+      case 'min_1':
+        await prefs.definirTamanhoMiniatura(caminho, 1);
+      case 'min_2':
+        await prefs.definirTamanhoMiniatura(caminho, 2);
+      case 'ocultos':
+        setState(() => _mostrarOcultos = !_mostrarOcultos);
+        await _carregar();
+    }
+  }
+
   // ==================== INTERFACE ====================
 
   @override
   Widget build(BuildContext context) {
     final textos = AppLocalizations.of(context);
+    final prefs = ref.watch(exploradorPrefsProvider)[_pilha.last.caminho] ??
+        const ExploradorPrefs();
+    final itens = _ordenar(_itens, prefs);
+
     return PopScope(
       canPop: _pilha.length <= 1,
       onPopInvokedWithResult: (didPop, resultado) {
@@ -187,14 +260,6 @@ class _ExploradorScreenState extends State<ExploradorScreen> {
         appBar: AppBar(
           title: Text(_pilha.last.rotulo),
           actions: [
-            IconButton(
-              tooltip: _mostrarOcultos ? textos.ocultarOcultos : textos.mostrarOcultos,
-              onPressed: () {
-                setState(() => _mostrarOcultos = !_mostrarOcultos);
-                _carregar();
-              },
-              icon: Icon(_mostrarOcultos ? MdiIcons.eyeOffOutline : MdiIcons.eyeOutline),
-            ),
             IconButton(
               tooltip: textos.atualizar,
               onPressed: _carregar,
@@ -206,16 +271,99 @@ class _ExploradorScreenState extends State<ExploradorScreen> {
                 onPressed: () => Navigator.of(context).pop(_pilha.last.caminho),
                 icon: const Icon(MdiIcons.check),
               ),
+            _menuOpcoes(textos, prefs),
           ],
         ),
         body: Column(
           children: [
             _construirTrilha(context),
-            if (!_carregando && _erro == null) _construirResumo(context),
-            Expanded(child: _construirCorpo(textos)),
+            if (!_carregando && _erro == null) _construirResumo(context, itens),
+            Expanded(child: _construirCorpo(textos, prefs, itens)),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _menuOpcoes(AppLocalizations textos, ExploradorPrefs prefs) {
+    PopupMenuItem<String> cabecalho(String texto) => PopupMenuItem<String>(
+          enabled: false,
+          height: 34,
+          child: Text(
+            texto,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+          ),
+        );
+
+    return PopupMenuButton<String>(
+      tooltip: textos.maisOpcoes,
+      icon: const Icon(MdiIcons.dotsVertical),
+      onSelected: _aoMenu,
+      itemBuilder: (context) => [
+        cabecalho(textos.verComo),
+        CheckedPopupMenuItem(
+          value: 'modo_lista',
+          checked: prefs.modo == ModoVisualizacao.lista,
+          child: Text(textos.modoLista),
+        ),
+        CheckedPopupMenuItem(
+          value: 'modo_grade',
+          checked: prefs.modo == ModoVisualizacao.grade,
+          child: Text(textos.modoGrade),
+        ),
+        const PopupMenuDivider(),
+        cabecalho(textos.ordenarPor),
+        CheckedPopupMenuItem(
+          value: 'ord_nome',
+          checked: prefs.ordenacao == OrdenacaoArquivo.nome,
+          child: Text(textos.ordenarNome),
+        ),
+        CheckedPopupMenuItem(
+          value: 'ord_data',
+          checked: prefs.ordenacao == OrdenacaoArquivo.data,
+          child: Text(textos.ordenarData),
+        ),
+        CheckedPopupMenuItem(
+          value: 'ord_tamanho',
+          checked: prefs.ordenacao == OrdenacaoArquivo.tamanho,
+          child: Text(textos.ordenarTamanho),
+        ),
+        CheckedPopupMenuItem(
+          value: 'ord_asc',
+          checked: prefs.ascendente,
+          child: Text(textos.ordemCrescente),
+        ),
+        CheckedPopupMenuItem(
+          value: 'ord_desc',
+          checked: !prefs.ascendente,
+          child: Text(textos.ordemDecrescente),
+        ),
+        const PopupMenuDivider(),
+        cabecalho(textos.tamanhoMiniaturas),
+        CheckedPopupMenuItem(
+          value: 'min_0',
+          checked: prefs.tamanhoMiniatura == 0,
+          child: Text(textos.miniaturaPequena),
+        ),
+        CheckedPopupMenuItem(
+          value: 'min_1',
+          checked: prefs.tamanhoMiniatura == 1,
+          child: Text(textos.miniaturaMedia),
+        ),
+        CheckedPopupMenuItem(
+          value: 'min_2',
+          checked: prefs.tamanhoMiniatura == 2,
+          child: Text(textos.miniaturaGrande),
+        ),
+        const PopupMenuDivider(),
+        CheckedPopupMenuItem(
+          value: 'ocultos',
+          checked: _mostrarOcultos,
+          child: Text(textos.mostrarOcultos),
+        ),
+      ],
     );
   }
 
@@ -260,10 +408,10 @@ class _ExploradorScreenState extends State<ExploradorScreen> {
     );
   }
 
-  Widget _construirResumo(BuildContext context) {
+  Widget _construirResumo(BuildContext context, List<_ItemArquivo> itens) {
     final textos = AppLocalizations.of(context);
-    final pastas = _itens.where((item) => item.ehDiretorio).length;
-    final arquivos = _itens.length - pastas;
+    final pastas = itens.where((item) => item.ehDiretorio).length;
+    final arquivos = itens.length - pastas;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
       child: Align(
@@ -276,7 +424,11 @@ class _ExploradorScreenState extends State<ExploradorScreen> {
     );
   }
 
-  Widget _construirCorpo(AppLocalizations textos) {
+  Widget _construirCorpo(
+    AppLocalizations textos,
+    ExploradorPrefs prefs,
+    List<_ItemArquivo> itens,
+  ) {
     if (_carregando) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -297,29 +449,79 @@ class _ExploradorScreenState extends State<ExploradorScreen> {
         ),
       );
     }
-    if (_itens.isEmpty) {
+    if (itens.isEmpty) {
       return Center(child: Text(textos.vazio));
     }
+    return prefs.modo == ModoVisualizacao.grade
+        ? _construirGrade(prefs, itens)
+        : _construirLista(textos, itens, prefs);
+  }
+
+  Widget _construirGrade(ExploradorPrefs prefs, List<_ItemArquivo> itens) {
+    final colunas = prefs.tamanhoMiniatura == 0
+        ? 4
+        : prefs.tamanhoMiniatura == 1
+            ? 3
+            : 2;
+    return GridView.builder(
+      padding: const EdgeInsets.all(10),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: colunas,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
+        childAspectRatio: 0.8,
+      ),
+      itemCount: itens.length,
+      itemBuilder: (context, indice) {
+        final item = itens[indice];
+        return InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: () => _abrirItem(item),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: _miniatura(context, item, prefs),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                item.nome,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              if (!item.ehDiretorio)
+                Text(
+                  formatarBytes(item.tamanho),
+                  style: Theme.of(context).textTheme.labelSmall,
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _construirLista(
+    AppLocalizations textos,
+    List<_ItemArquivo> itens,
+    ExploradorPrefs prefs,
+  ) {
     return ListView.builder(
       padding: const EdgeInsets.symmetric(vertical: 4),
-      itemCount: _itens.length,
+      itemCount: itens.length,
       itemBuilder: (context, indice) {
-        final item = _itens[indice];
-        final esquema = Theme.of(context).colorScheme;
+        final item = itens[indice];
         return ListTile(
-          leading: Container(
-            width: 40,
-            height: 40,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: (item.ehDiretorio ? esquema.primaryContainer : esquema.surfaceContainerHighest)
-                  .withValues(alpha: 0.7),
+          leading: SizedBox(
+            width: 46,
+            height: 46,
+            child: ClipRRect(
               borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(
-              _iconeDoItem(item),
-              size: 22,
-              color: item.ehDiretorio ? esquema.onPrimaryContainer : esquema.onSurfaceVariant,
+              child: _miniatura(context, item, prefs),
             ),
           ),
           title: Text(item.nome, maxLines: 1, overflow: TextOverflow.ellipsis),
@@ -336,16 +538,47 @@ class _ExploradorScreenState extends State<ExploradorScreen> {
     );
   }
 
+  Widget _miniatura(BuildContext context, _ItemArquivo item, ExploradorPrefs prefs) {
+    final esquema = Theme.of(context).colorScheme;
+    if (item.ehDiretorio) {
+      return _caixaIcone(MdiIcons.folderOutline, esquema.primaryContainer, esquema.onPrimaryContainer);
+    }
+    if (ehArquivoDeImagem(item.nome)) {
+      final largura = prefs.tamanhoMiniatura == 0
+          ? 160
+          : prefs.tamanhoMiniatura == 1
+              ? 260
+              : 420;
+      return Image.file(
+        File(item.caminho),
+        fit: BoxFit.cover,
+        cacheWidth: largura,
+        errorBuilder: (_, _, _) => _caixaIcone(
+          MdiIcons.imageBrokenVariant,
+          esquema.surfaceContainerHighest,
+          esquema.onSurfaceVariant,
+        ),
+      );
+    }
+    return _caixaIcone(
+      _iconeDoItem(item),
+      esquema.surfaceContainerHighest,
+      esquema.onSurfaceVariant,
+    );
+  }
+
+  Widget _caixaIcone(IconData icone, Color fundo, Color corIcone) {
+    return Container(
+      alignment: Alignment.center,
+      color: fundo.withValues(alpha: 0.7),
+      child: Icon(icone, size: 22, color: corIcone),
+    );
+  }
+
   IconData _iconeDoItem(_ItemArquivo item) {
     if (item.ehDiretorio) return MdiIcons.folderOutline;
     final nome = item.nome.toLowerCase();
-    if (nome.endsWith('.jpg') ||
-        nome.endsWith('.jpeg') ||
-        nome.endsWith('.png') ||
-        nome.endsWith('.gif') ||
-        nome.endsWith('.webp')) {
-      return MdiIcons.imageOutline;
-    }
+    if (ehArquivoDeImagem(nome)) return MdiIcons.imageOutline;
     if (nome.endsWith('.mp4') || nome.endsWith('.mkv') || nome.endsWith('.mov') || nome.endsWith('.avi')) {
       return MdiIcons.videoOutline;
     }

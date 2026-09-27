@@ -70,7 +70,7 @@ Base técnica verificada em [`INTEGRACAO-SYNCTHING-FORK.md`](./INTEGRACAO-SYNCTH
   `/rest/config`) — essencial para validar no aparelho real.
 
 ## Android
-- `applicationId` proposto: `com.vandre.meudrive` (alterável antes do release).
+- `applicationId`: `com.vandreapps.meu_drive`.
 - Permissões: `INTERNET`, `ACCESS_NETWORK_STATE`, `MANAGE_EXTERNAL_STORAGE`,
   `ACCESS_LOCAL_NETWORK` (Android 17+).
 - `<queries>` declarando os dois pacotes do Syncthing-Fork (evita QUERY_ALL_PACKAGES).
