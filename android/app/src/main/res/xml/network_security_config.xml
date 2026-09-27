@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    A GUI do Syncthing-Fork roda em localhost e pode estar em HTTP (sem TLS).
+    O Android 9+ bloqueia tráfego em texto claro por padrão, então liberamos
+    HTTP apenas para o loopback (127.0.0.1 e localhost). Nada fora daqui é
+    afetado: todo o resto continua exigindo HTTPS.
+-->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">127.0.0.1</domain>
+        <domain includeSubdomains="false">localhost</domain>
+    </domain-config>
+</network-security-config>
