@@ -13,6 +13,8 @@ class MeuDriveApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final modoTema = ref.watch(temaProvider);
     return MaterialApp(
+      // Sem a faixa "DEBUG" no canto (indiferente no release).
+      debugShowCheckedModeBanner: false,
       onGenerateTitle: (contexto) => AppLocalizations.of(contexto).appNome,
       theme: MeuDriveTema.claro(),
       darkTheme: MeuDriveTema.escuro(),

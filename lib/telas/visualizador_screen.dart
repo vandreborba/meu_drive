@@ -140,7 +140,9 @@ class _VisualizadorScreenState extends State<VisualizadorScreen> {
               ),
             ),
           ),
-          Container(
+          SafeArea(
+            top: false,
+            child: Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             color: esquema.surfaceContainerHighest,
@@ -163,6 +165,7 @@ class _VisualizadorScreenState extends State<VisualizadorScreen> {
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
+            ),
             ),
           ),
         ],
