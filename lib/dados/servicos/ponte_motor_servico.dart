@@ -136,4 +136,20 @@ class PonteMotorServico {
   Future<void> pedirPermissaoInstalar() async {
     await _canal.invokeMethod<bool>('pedirPermissaoInstalar');
   }
+
+  /// Pasta de destino dos arquivos recebidos via "Compartilhar" (ou `null`).
+  Future<String?> lerPastaCompartilhamento() async {
+    final caminho = await _canal.invokeMethod<String>('lerPastaCompartilhamento');
+    debugPrint('[Ponte] lerPastaCompartilhamento -> $caminho');
+    return caminho;
+  }
+
+  /// Define a pasta de destino dos arquivos recebidos (`null` para remover).
+  Future<void> definirPastaCompartilhamento(String? caminho) async {
+    await _canal.invokeMethod<bool>(
+      'definirPastaCompartilhamento',
+      {'caminho': caminho},
+    );
+    debugPrint('[Ponte] definirPastaCompartilhamento -> $caminho');
+  }
 }

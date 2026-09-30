@@ -67,6 +67,12 @@ class MainActivity : FlutterActivity() {
                     pedirPermissaoInstalar()
                     resultado.success(true)
                 }
+                "lerPastaCompartilhamento" ->
+                    resultado.success(PreferenciasCompartilhamento.ler(this))
+                "definirPastaCompartilhamento" -> {
+                    PreferenciasCompartilhamento.definir(this, chamada.argument<String>("caminho"))
+                    resultado.success(true)
+                }
                 else -> resultado.notImplemented()
             }
         }

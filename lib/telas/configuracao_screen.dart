@@ -7,7 +7,9 @@ import 'package:meu_drive/dados/provedores/motor_provider.dart';
 import 'package:meu_drive/dados/provedores/tema_provider.dart';
 import 'package:meu_drive/dados/servicos/ponte_motor_servico.dart';
 import 'package:meu_drive/l10n/gerado/app_localizations.dart';
+import 'package:meu_drive/telas/explorador_screen.dart';
 import 'package:meu_drive/utils_geral/caixa_dialogo.dart';
+import 'package:meu_drive/utils_geral/espaco_aux.dart';
 import 'package:meu_drive/utils_geral/formatadores_aux.dart';
 import 'package:meu_drive/utils_geral/rotulos_aux.dart';
 import 'package:meu_drive/widgets/cartao_atualizacao.dart';
@@ -24,11 +26,13 @@ class _ConfiguracaoScreenState extends ConsumerState<ConfiguracaoScreen> {
   String? _endereco;
   String? _versao;
   EspacoArmazenamento? _espaco;
+  String? _pastaRecebidos;
 
   @override
   void initState() {
     super.initState();
     _carregarEndereco();
+    _carregarPastaRecebidos();
     ref.read(atualizacaoProvider.notifier).versaoAtual().then((valor) {
       if (mounted) setState(() => _versao = valor);
     });
@@ -65,6 +69,56 @@ class _ConfiguracaoScreenState extends ConsumerState<ConfiguracaoScreen> {
     if (mounted) setState(() => _endereco = endereco);
   }
 
+  Future<void> _carregarPastaRecebidos() async {
+    final caminho = await PonteMotorServico().lerPastaCompartilhamento();
+    if (mounted) setState(() => _pastaRecebidos = caminho);
+  }
+
+  Future<void> _escolherPastaRecebidos() async {
+    final textos = AppLocalizations.of(context);
+    final pastas = ref.read(motorProvider).pastas;
+    if (pastas.isEmpty) {
+      await MinhaCaixaDialogo.informar(
+        context,
+        titulo: textos.pastaRecebidos,
+        mensagem: textos.pastaRecebidosSemPastas,
+      );
+      return;
+    }
+    final escolha = await MinhaCaixaDialogo.escolher(
+      context,
+      titulo: textos.escolherPastaCompartilhada,
+      opcoes: [
+        for (final pasta in pastas)
+          OpcaoDialogo(texto: pasta.nomeAmigavel, icone: MdiIcons.folderOutline),
+      ],
+    );
+    if (escolha == null || !mounted) return;
+    final pasta = pastas[escolha];
+    final caminho = await Navigator.of(context).push<String>(
+      MaterialPageRoute<String>(
+        builder: (_) => ExploradorScreen(
+          caminhoInicial: pasta.caminho,
+          titulo: pasta.nomeAmigavel,
+          selecionarPasta: true,
+        ),
+      ),
+    );
+    if (caminho == null) return;
+    await PonteMotorServico().definirPastaCompartilhamento(caminho);
+    if (!mounted) return;
+    setState(() => _pastaRecebidos = caminho);
+    MinhaCaixaDialogo.mostrarSnackBar(context, textos.pastaRecebidosDefinida);
+  }
+
+  Future<void> _removerPastaRecebidos() async {
+    final textos = AppLocalizations.of(context);
+    await PonteMotorServico().definirPastaCompartilhamento(null);
+    if (!mounted) return;
+    setState(() => _pastaRecebidos = null);
+    MinhaCaixaDialogo.mostrarSnackBar(context, textos.pastaRecebidosRemovida);
+  }
+
   @override
   Widget build(BuildContext context) {
     final textos = AppLocalizations.of(context);
@@ -74,7 +128,7 @@ class _ConfiguracaoScreenState extends ConsumerState<ConfiguracaoScreen> {
     return Scaffold(
       appBar: AppBar(title: Text(textos.configuracao)),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        padding: EdgeInsets.fromLTRB(16, 8, 16, 24 + espacoInferiorSistema(context)),
         children: [
           _titulo(context, textos.geral),
           Card(
@@ -102,6 +156,32 @@ class _ConfiguracaoScreenState extends ConsumerState<ConfiguracaoScreen> {
                   onTap: _verificarAtualizacoes,
                 ),
               ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          _titulo(context, textos.compartilhamento),
+          Card(
+            clipBehavior: Clip.antiAlias,
+            child: ListTile(
+              leading: const Icon(MdiIcons.folderDownloadOutline),
+              title: Text(textos.pastaRecebidos),
+              subtitle: Text(_pastaRecebidos ?? textos.pastaRecebidosNaoDefinida),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (_pastaRecebidos != null)
+                    IconButton(
+                      tooltip: textos.removerPastaRecebidos,
+                      onPressed: _removerPastaRecebidos,
+                      icon: const Icon(MdiIcons.closeCircleOutline),
+                    ),
+                  _botaoAjuda(
+                    titulo: textos.pastaRecebidos,
+                    explicacao: textos.pastaRecebidosAjuda,
+                  ),
+                ],
+              ),
+              onTap: _escolherPastaRecebidos,
             ),
           ),
           const SizedBox(height: 16),

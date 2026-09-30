@@ -2,4 +2,14 @@
 <resources>
     <string name="app_name">Meu Drive</string>
     <string name="motor_sincronizando">Sincronizando em segundo plano</string>
+
+    <!-- Avisos dos arquivos recebidos via "Compartilhar". -->
+    <string name="compartilhar_defina_pasta">Defina a pasta de destino dos arquivos no Meu Drive.</string>
+    <string name="compartilhar_nada_para_salvar">Nada para salvar.</string>
+    <string name="compartilhar_pasta_indisponivel">Pasta de destino indisponível.</string>
+    <string name="compartilhar_falhou">Não foi possível salvar o arquivo.</string>
+    <plurals name="compartilhar_salvo">
+        <item quantity="one">%1$d arquivo salvo em %2$s</item>
+        <item quantity="other">%1$d arquivos salvos em %2$s</item>
+    </plurals>
 </resources>

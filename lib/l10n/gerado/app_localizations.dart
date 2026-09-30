@@ -760,6 +760,60 @@ abstract class AppLocalizations {
   /// **'Avançado'**
   String get avancado;
 
+  /// No description provided for @compartilhamento.
+  ///
+  /// In pt, this message translates to:
+  /// **'Compartilhamento'**
+  String get compartilhamento;
+
+  /// No description provided for @pastaRecebidos.
+  ///
+  /// In pt, this message translates to:
+  /// **'Pasta dos arquivos recebidos'**
+  String get pastaRecebidos;
+
+  /// No description provided for @pastaRecebidosAjuda.
+  ///
+  /// In pt, this message translates to:
+  /// **'Quando você toca em \"Compartilhar\" em outro app e escolhe o Meu Drive, o arquivo é salvo nesta pasta. Escolha uma pasta (ou subpasta) dentro de uma pasta compartilhada para que o arquivo também seja sincronizado com os outros dispositivos.'**
+  String get pastaRecebidosAjuda;
+
+  /// No description provided for @pastaRecebidosNaoDefinida.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nenhuma pasta definida'**
+  String get pastaRecebidosNaoDefinida;
+
+  /// No description provided for @escolherPastaCompartilhada.
+  ///
+  /// In pt, this message translates to:
+  /// **'Escolha a pasta compartilhada'**
+  String get escolherPastaCompartilhada;
+
+  /// No description provided for @pastaRecebidosSemPastas.
+  ///
+  /// In pt, this message translates to:
+  /// **'Você ainda não tem pastas compartilhadas. Adicione uma pasta em Gerenciar para poder escolher onde salvar os arquivos recebidos.'**
+  String get pastaRecebidosSemPastas;
+
+  /// No description provided for @pastaRecebidosDefinida.
+  ///
+  /// In pt, this message translates to:
+  /// **'Pasta de destino definida.'**
+  String get pastaRecebidosDefinida;
+
+  /// No description provided for @pastaRecebidosRemovida.
+  ///
+  /// In pt, this message translates to:
+  /// **'Pasta de destino removida.'**
+  String get pastaRecebidosRemovida;
+
+  /// No description provided for @removerPastaRecebidos.
+  ///
+  /// In pt, this message translates to:
+  /// **'Remover pasta de destino'**
+  String get removerPastaRecebidos;
+
   /// No description provided for @abaPastas.
   ///
   /// In pt, this message translates to:

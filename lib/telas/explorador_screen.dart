@@ -10,6 +10,7 @@ import 'package:meu_drive/l10n/gerado/app_localizations.dart';
 import 'package:meu_drive/telas/visualizador_screen.dart';
 import 'package:meu_drive/utils_geral/arquivos_aux.dart';
 import 'package:meu_drive/utils_geral/caixa_dialogo.dart';
+import 'package:meu_drive/utils_geral/espaco_aux.dart';
 import 'package:meu_drive/utils_geral/formatadores_aux.dart';
 
 /// Um nível navegado (pasta) dentro do explorador.
@@ -464,7 +465,7 @@ class _ExploradorScreenState extends ConsumerState<ExploradorScreen> {
             ? 3
             : 2;
     return GridView.builder(
-      padding: const EdgeInsets.all(10),
+      padding: EdgeInsets.fromLTRB(10, 10, 10, 10 + espacoInferiorSistema(context)),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: colunas,
         crossAxisSpacing: 10,
@@ -511,7 +512,7 @@ class _ExploradorScreenState extends ConsumerState<ExploradorScreen> {
     ExploradorPrefs prefs,
   ) {
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: EdgeInsets.only(top: 4, bottom: 4 + espacoInferiorSistema(context)),
       itemCount: itens.length,
       itemBuilder: (context, indice) {
         final item = itens[indice];

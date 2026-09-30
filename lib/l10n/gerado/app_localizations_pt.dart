@@ -351,6 +351,35 @@ class AppLocalizationsPt extends AppLocalizations {
   String get avancado => 'Avançado';
 
   @override
+  String get compartilhamento => 'Compartilhamento';
+
+  @override
+  String get pastaRecebidos => 'Pasta dos arquivos recebidos';
+
+  @override
+  String get pastaRecebidosAjuda =>
+      'Quando você toca em \"Compartilhar\" em outro app e escolhe o Meu Drive, o arquivo é salvo nesta pasta. Escolha uma pasta (ou subpasta) dentro de uma pasta compartilhada para que o arquivo também seja sincronizado com os outros dispositivos.';
+
+  @override
+  String get pastaRecebidosNaoDefinida => 'Nenhuma pasta definida';
+
+  @override
+  String get escolherPastaCompartilhada => 'Escolha a pasta compartilhada';
+
+  @override
+  String get pastaRecebidosSemPastas =>
+      'Você ainda não tem pastas compartilhadas. Adicione uma pasta em Gerenciar para poder escolher onde salvar os arquivos recebidos.';
+
+  @override
+  String get pastaRecebidosDefinida => 'Pasta de destino definida.';
+
+  @override
+  String get pastaRecebidosRemovida => 'Pasta de destino removida.';
+
+  @override
+  String get removerPastaRecebidos => 'Remover pasta de destino';
+
+  @override
   String get abaPastas => 'Pastas';
 
   @override

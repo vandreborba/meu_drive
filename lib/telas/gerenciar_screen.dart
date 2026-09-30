@@ -11,6 +11,7 @@ import 'package:meu_drive/telas/escanear_qr_screen.dart';
 import 'package:meu_drive/telas/explorador_screen.dart';
 import 'package:meu_drive/telas/pasta_detalhe_screen.dart';
 import 'package:meu_drive/utils_geral/caixa_dialogo.dart';
+import 'package:meu_drive/utils_geral/espaco_aux.dart';
 import 'package:meu_drive/widgets/selo_estado_pasta.dart';
 
 /// Gerenciamento de pastas e computadores, em duas abas.
@@ -75,7 +76,7 @@ class _GerenciarScreenState extends ConsumerState<GerenciarScreen>
       return Center(child: Text(textos.nenhumaPastaGerenciar));
     }
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+      padding: EdgeInsets.fromLTRB(16, 16, 16, 96 + espacoInferiorSistema(context)),
       children: [
         for (final pasta in estado.pastas)
           Card(
@@ -141,7 +142,7 @@ class _GerenciarScreenState extends ConsumerState<GerenciarScreen>
 
   Widget _abaComputadores(AppLocalizations textos, EstadoMotor estado) {
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+      padding: EdgeInsets.fromLTRB(16, 16, 16, 96 + espacoInferiorSistema(context)),
       children: [
         Card(
           child: ListTile(

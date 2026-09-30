@@ -11,6 +11,7 @@ import 'package:meu_drive/telas/configuracao_screen.dart';
 import 'package:meu_drive/telas/explorador_screen.dart';
 import 'package:meu_drive/telas/gerenciar_screen.dart';
 import 'package:meu_drive/utils_geral/caixa_dialogo.dart';
+import 'package:meu_drive/utils_geral/espaco_aux.dart';
 import 'package:meu_drive/utils_geral/formatadores_aux.dart';
 import 'package:meu_drive/widgets/cartao_atualizacao.dart';
 import 'package:meu_drive/widgets/faixa_secao.dart';
@@ -253,7 +254,7 @@ class _CorpoConectado extends StatelessWidget {
     return RefreshIndicator(
       onRefresh: () => onVerificar(),
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+        padding: EdgeInsets.fromLTRB(16, 16, 16, 24 + espacoInferiorSistema(context)),
         children: [
           if (!estado.temPermissaoArquivos) ...[
             _AvisoPermissao(onConceder: onConcederPermissao),

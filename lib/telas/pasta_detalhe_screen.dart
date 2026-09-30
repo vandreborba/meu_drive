@@ -6,6 +6,7 @@ import 'package:meu_drive/dados/modelos/pasta_syncthing.dart';
 import 'package:meu_drive/dados/provedores/motor_provider.dart';
 import 'package:meu_drive/l10n/gerado/app_localizations.dart';
 import 'package:meu_drive/utils_geral/caixa_dialogo.dart';
+import 'package:meu_drive/utils_geral/espaco_aux.dart';
 
 /// Edição de uma pasta: nome, tipo, pausa, compartilhamento e exclusão.
 class PastaDetalheScreen extends ConsumerStatefulWidget {
@@ -49,7 +50,7 @@ class _PastaDetalheScreenState extends ConsumerState<PastaDetalheScreen> {
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + espacoInferiorSistema(context)),
         children: [
           TextField(
             controller: _nome,
