@@ -528,4 +528,63 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get abrirPasta => 'Abrir a pasta';
+
+  @override
+  String get opcoesItem => 'Opções';
+
+  @override
+  String get informacoes => 'Informações';
+
+  @override
+  String get compartilhar => 'Compartilhar';
+
+  @override
+  String get copiarCaminho => 'Copiar caminho';
+
+  @override
+  String get caminhoCopiado => 'Caminho copiado.';
+
+  @override
+  String get itemExcluido => 'Item excluído.';
+
+  @override
+  String get falhaExcluir => 'Não foi possível excluir.';
+
+  @override
+  String get falhaRenomear => 'Não foi possível renomear.';
+
+  @override
+  String get falhaCompartilhar => 'Não foi possível compartilhar.';
+
+  @override
+  String get nomeInvalido => 'Nome inválido.';
+
+  @override
+  String get nomeJaExiste => 'Já existe um item com esse nome.';
+
+  @override
+  String get infoNome => 'Nome';
+
+  @override
+  String get infoTipo => 'Tipo';
+
+  @override
+  String get infoTamanho => 'Tamanho';
+
+  @override
+  String get infoModificado => 'Modificado em';
+
+  @override
+  String get infoCaminho => 'Caminho';
+
+  @override
+  String get tipoPastaNome => 'Pasta';
+
+  @override
+  String get tipoArquivoNome => 'Arquivo';
+
+  @override
+  String excluirItemMensagem(String nome) {
+    return 'Excluir \"$nome\"? Se estiver em uma pasta sincronizada, a exclusão também será aplicada nos outros dispositivos.';
+  }
 }

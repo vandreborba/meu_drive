@@ -1107,6 +1107,120 @@ abstract class AppLocalizations {
   /// In pt, this message translates to:
   /// **'Abrir a pasta'**
   String get abrirPasta;
+
+  /// No description provided for @opcoesItem.
+  ///
+  /// In pt, this message translates to:
+  /// **'Opções'**
+  String get opcoesItem;
+
+  /// No description provided for @informacoes.
+  ///
+  /// In pt, this message translates to:
+  /// **'Informações'**
+  String get informacoes;
+
+  /// No description provided for @compartilhar.
+  ///
+  /// In pt, this message translates to:
+  /// **'Compartilhar'**
+  String get compartilhar;
+
+  /// No description provided for @copiarCaminho.
+  ///
+  /// In pt, this message translates to:
+  /// **'Copiar caminho'**
+  String get copiarCaminho;
+
+  /// No description provided for @caminhoCopiado.
+  ///
+  /// In pt, this message translates to:
+  /// **'Caminho copiado.'**
+  String get caminhoCopiado;
+
+  /// No description provided for @itemExcluido.
+  ///
+  /// In pt, this message translates to:
+  /// **'Item excluído.'**
+  String get itemExcluido;
+
+  /// No description provided for @falhaExcluir.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não foi possível excluir.'**
+  String get falhaExcluir;
+
+  /// No description provided for @falhaRenomear.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não foi possível renomear.'**
+  String get falhaRenomear;
+
+  /// No description provided for @falhaCompartilhar.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não foi possível compartilhar.'**
+  String get falhaCompartilhar;
+
+  /// No description provided for @nomeInvalido.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nome inválido.'**
+  String get nomeInvalido;
+
+  /// No description provided for @nomeJaExiste.
+  ///
+  /// In pt, this message translates to:
+  /// **'Já existe um item com esse nome.'**
+  String get nomeJaExiste;
+
+  /// No description provided for @infoNome.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nome'**
+  String get infoNome;
+
+  /// No description provided for @infoTipo.
+  ///
+  /// In pt, this message translates to:
+  /// **'Tipo'**
+  String get infoTipo;
+
+  /// No description provided for @infoTamanho.
+  ///
+  /// In pt, this message translates to:
+  /// **'Tamanho'**
+  String get infoTamanho;
+
+  /// No description provided for @infoModificado.
+  ///
+  /// In pt, this message translates to:
+  /// **'Modificado em'**
+  String get infoModificado;
+
+  /// No description provided for @infoCaminho.
+  ///
+  /// In pt, this message translates to:
+  /// **'Caminho'**
+  String get infoCaminho;
+
+  /// No description provided for @tipoPastaNome.
+  ///
+  /// In pt, this message translates to:
+  /// **'Pasta'**
+  String get tipoPastaNome;
+
+  /// No description provided for @tipoArquivoNome.
+  ///
+  /// In pt, this message translates to:
+  /// **'Arquivo'**
+  String get tipoArquivoNome;
+
+  /// No description provided for @excluirItemMensagem.
+  ///
+  /// In pt, this message translates to:
+  /// **'Excluir \"{nome}\"? Se estiver em uma pasta sincronizada, a exclusão também será aplicada nos outros dispositivos.'**
+  String excluirItemMensagem(String nome);
 }
 
 class _AppLocalizationsDelegate

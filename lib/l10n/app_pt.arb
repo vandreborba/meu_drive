@@ -168,5 +168,31 @@
   "nResultados": "resultados",
   "ultimosArquivos": "Últimos arquivos",
   "nenhumRecente": "Nenhum arquivo recente.",
-  "abrirPasta": "Abrir a pasta"
+  "abrirPasta": "Abrir a pasta",
+  "opcoesItem": "Opções",
+  "informacoes": "Informações",
+  "compartilhar": "Compartilhar",
+  "copiarCaminho": "Copiar caminho",
+  "caminhoCopiado": "Caminho copiado.",
+  "itemExcluido": "Item excluído.",
+  "falhaExcluir": "Não foi possível excluir.",
+  "falhaRenomear": "Não foi possível renomear.",
+  "falhaCompartilhar": "Não foi possível compartilhar.",
+  "nomeInvalido": "Nome inválido.",
+  "nomeJaExiste": "Já existe um item com esse nome.",
+  "infoNome": "Nome",
+  "infoTipo": "Tipo",
+  "infoTamanho": "Tamanho",
+  "infoModificado": "Modificado em",
+  "infoCaminho": "Caminho",
+  "tipoPastaNome": "Pasta",
+  "tipoArquivoNome": "Arquivo",
+  "excluirItemMensagem": "Excluir \"{nome}\"? Se estiver em uma pasta sincronizada, a exclusão também será aplicada nos outros dispositivos.",
+  "@excluirItemMensagem": {
+    "placeholders": {
+      "nome": {
+        "type": "String"
+      }
+    }
+  }
 }

@@ -8,6 +8,7 @@ import 'package:meu_drive/dados/modelos/item_arquivo.dart';
 import 'package:meu_drive/dados/provedores/explorador_prefs_provider.dart';
 import 'package:meu_drive/l10n/gerado/app_localizations.dart';
 import 'package:meu_drive/utils_geral/abrir_item_aux.dart';
+import 'package:meu_drive/utils_geral/acoes_arquivo_aux.dart';
 import 'package:meu_drive/utils_geral/arquivos_aux.dart';
 import 'package:meu_drive/utils_geral/espaco_aux.dart';
 import 'package:meu_drive/utils_geral/formatadores_aux.dart';
@@ -168,6 +169,59 @@ class _ExploradorScreenState extends ConsumerState<ExploradorScreen> {
     final prefs = ref.read(exploradorPrefsProvider)[_pilha.last.caminho] ??
         const ExploradorPrefs();
     await abrirArquivo(context, item, _ordenar(_itens, prefs));
+  }
+
+  // ==================== MENU DO ITEM ====================
+
+  Future<void> _executarAcao(
+    ItemArquivo item,
+    AcaoArquivo acao,
+    List<ItemArquivo> itens,
+  ) async {
+    final recarregar = await executarAcaoArquivo(context, item, acao, itens);
+    if (recarregar && mounted) await _carregar();
+  }
+
+  Widget _menuDoItem(ItemArquivo item, List<ItemArquivo> itens) {
+    final textos = AppLocalizations.of(context);
+    final esquema = Theme.of(context).colorScheme;
+
+    PopupMenuItem<AcaoArquivo> opcao(
+      AcaoArquivo valor,
+      IconData icone,
+      String texto, {
+      bool destrutivo = false,
+    }) {
+      final cor = destrutivo ? esquema.error : null;
+      return PopupMenuItem<AcaoArquivo>(
+        value: valor,
+        child: Row(
+          children: [
+            Icon(icone, size: 20, color: cor),
+            const SizedBox(width: 12),
+            Text(texto, style: cor == null ? null : TextStyle(color: cor)),
+          ],
+        ),
+      );
+    }
+
+    return PopupMenuButton<AcaoArquivo>(
+      tooltip: textos.opcoesItem,
+      icon: const Icon(MdiIcons.dotsVertical, size: 20),
+      padding: EdgeInsets.zero,
+      onSelected: (acao) => _executarAcao(item, acao, itens),
+      itemBuilder: (context) => [
+        if (!item.ehDiretorio) ...[
+          opcao(AcaoArquivo.abrirCom, MdiIcons.openInNew, textos.abrirCom),
+          opcao(AcaoArquivo.compartilhar, MdiIcons.shareVariantOutline, textos.compartilhar),
+        ],
+        opcao(AcaoArquivo.renomear, MdiIcons.pencilOutline, textos.renomear),
+        opcao(AcaoArquivo.copiarCaminho, MdiIcons.contentCopy, textos.copiarCaminho),
+        opcao(AcaoArquivo.informacoes, MdiIcons.informationOutline, textos.informacoes),
+        const PopupMenuDivider(),
+        opcao(AcaoArquivo.excluir, MdiIcons.deleteOutline, textos.excluir, destrutivo: true),
+      ],
+    );
   }
 
   // ==================== PREFERÊNCIAS ====================
@@ -435,32 +489,45 @@ class _ExploradorScreenState extends ConsumerState<ExploradorScreen> {
       itemCount: itens.length,
       itemBuilder: (context, indice) {
         final item = itens[indice];
-        return InkWell(
-          borderRadius: BorderRadius.circular(12),
-          onTap: () => _abrirItem(item),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: _miniatura(context, item, prefs),
-                ),
+        return Stack(
+          children: [
+            InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: () => _abrirItem(item),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: _miniatura(context, item, prefs),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    item.nome,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  if (!item.ehDiretorio)
+                    Text(
+                      formatarBytes(item.tamanho),
+                      style: Theme.of(context).textTheme.labelSmall,
+                    ),
+                ],
               ),
-              const SizedBox(height: 4),
-              Text(
-                item.nome,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.bodySmall,
+            ),
+            Positioned(
+              top: 2,
+              right: 2,
+              child: Material(
+                color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.8),
+                shape: const CircleBorder(),
+                child: _menuDoItem(item, itens),
               ),
-              if (!item.ehDiretorio)
-                Text(
-                  formatarBytes(item.tamanho),
-                  style: Theme.of(context).textTheme.labelSmall,
-                ),
-            ],
-          ),
+            ),
+          ],
         );
       },
     );
@@ -492,7 +559,13 @@ class _ExploradorScreenState extends ConsumerState<ExploradorScreen> {
                   '${formatarBytes(item.tamanho)}'
                   '${item.modificado != null ? ' · ${formatarData(item.modificado!)}' : ''}',
                 ),
-          trailing: item.ehDiretorio ? const Icon(MdiIcons.chevronRight, size: 20) : null,
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (item.ehDiretorio) const Icon(MdiIcons.chevronRight, size: 20),
+              _menuDoItem(item, itens),
+            ],
+          ),
           onTap: () => _abrirItem(item),
         );
       },
