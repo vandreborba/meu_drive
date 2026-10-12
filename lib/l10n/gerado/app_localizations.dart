@@ -1029,6 +1029,54 @@ abstract class AppLocalizations {
   /// In pt, this message translates to:
   /// **'Erro'**
   String get faseErro;
+
+  /// No description provided for @buscar.
+  ///
+  /// In pt, this message translates to:
+  /// **'Buscar'**
+  String get buscar;
+
+  /// No description provided for @buscarDica.
+  ///
+  /// In pt, this message translates to:
+  /// **'Buscar arquivos'**
+  String get buscarDica;
+
+  /// No description provided for @buscarInstrucao.
+  ///
+  /// In pt, this message translates to:
+  /// **'Digite o nome de um arquivo para procurar em todo o armazenamento.'**
+  String get buscarInstrucao;
+
+  /// No description provided for @nenhumResultado.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nenhum arquivo encontrado.'**
+  String get nenhumResultado;
+
+  /// No description provided for @nResultados.
+  ///
+  /// In pt, this message translates to:
+  /// **'resultados'**
+  String get nResultados;
+
+  /// No description provided for @ultimosArquivos.
+  ///
+  /// In pt, this message translates to:
+  /// **'Últimos arquivos'**
+  String get ultimosArquivos;
+
+  /// No description provided for @nenhumRecente.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nenhum arquivo recente.'**
+  String get nenhumRecente;
+
+  /// No description provided for @abrirPasta.
+  ///
+  /// In pt, this message translates to:
+  /// **'Abrir a pasta'**
+  String get abrirPasta;
 }
 
 class _AppLocalizationsDelegate

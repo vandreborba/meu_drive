@@ -488,4 +488,29 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get faseErro => 'Erro';
+
+  @override
+  String get buscar => 'Buscar';
+
+  @override
+  String get buscarDica => 'Buscar arquivos';
+
+  @override
+  String get buscarInstrucao =>
+      'Digite o nome de um arquivo para procurar em todo o armazenamento.';
+
+  @override
+  String get nenhumResultado => 'Nenhum arquivo encontrado.';
+
+  @override
+  String get nResultados => 'resultados';
+
+  @override
+  String get ultimosArquivos => 'Últimos arquivos';
+
+  @override
+  String get nenhumRecente => 'Nenhum arquivo recente.';
+
+  @override
+  String get abrirPasta => 'Abrir a pasta';
 }

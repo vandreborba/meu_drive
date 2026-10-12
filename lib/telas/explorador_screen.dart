@@ -3,13 +3,12 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_material_design_icons/flutter_material_design_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:open_filex/open_filex.dart';
 
+import 'package:meu_drive/dados/modelos/item_arquivo.dart';
 import 'package:meu_drive/dados/provedores/explorador_prefs_provider.dart';
 import 'package:meu_drive/l10n/gerado/app_localizations.dart';
-import 'package:meu_drive/telas/visualizador_screen.dart';
+import 'package:meu_drive/utils_geral/abrir_item_aux.dart';
 import 'package:meu_drive/utils_geral/arquivos_aux.dart';
-import 'package:meu_drive/utils_geral/caixa_dialogo.dart';
 import 'package:meu_drive/utils_geral/espaco_aux.dart';
 import 'package:meu_drive/utils_geral/formatadores_aux.dart';
 
@@ -19,22 +18,6 @@ class _Nivel {
   final String rotulo;
 
   const _Nivel({required this.caminho, required this.rotulo});
-}
-
-class _ItemArquivo {
-  final String nome;
-  final String caminho;
-  final bool ehDiretorio;
-  final int tamanho;
-  final DateTime? modificado;
-
-  const _ItemArquivo({
-    required this.nome,
-    required this.caminho,
-    required this.ehDiretorio,
-    required this.tamanho,
-    required this.modificado,
-  });
 }
 
 /// Explorador de arquivos com trilha, miniaturas de fotos, ordenação e modos
@@ -63,7 +46,7 @@ class _ExploradorScreenState extends ConsumerState<ExploradorScreen> {
     _Nivel(caminho: widget.caminhoInicial, rotulo: widget.titulo),
   ];
 
-  List<_ItemArquivo> _itens = const [];
+  List<ItemArquivo> _itens = const [];
   bool _carregando = true;
   bool _mostrarOcultos = false;
   String? _erro;
@@ -82,7 +65,7 @@ class _ExploradorScreenState extends ConsumerState<ExploradorScreen> {
 
   // ==================== NAVEGAÇÃO ====================
 
-  void _entrarNaPasta(_ItemArquivo item) {
+  void _entrarNaPasta(ItemArquivo item) {
     setState(() => _pilha.add(_Nivel(caminho: item.caminho, rotulo: item.nome)));
     _carregar();
   }
@@ -108,14 +91,14 @@ class _ExploradorScreenState extends ConsumerState<ExploradorScreen> {
     });
     try {
       final entradas = await Directory(caminho).list(followLinks: false).toList();
-      final itens = <_ItemArquivo>[];
+      final itens = <ItemArquivo>[];
       for (final entrada in entradas) {
         final nome = entrada.path.split('/').where((p) => p.isNotEmpty).last;
         if (!_mostrarOcultos && nome.startsWith('.')) continue;
         try {
           final tipo = await FileSystemEntity.type(entrada.path, followLinks: false);
           if (tipo == FileSystemEntityType.directory) {
-            itens.add(_ItemArquivo(
+            itens.add(ItemArquivo(
               nome: nome,
               caminho: entrada.path,
               ehDiretorio: true,
@@ -124,7 +107,7 @@ class _ExploradorScreenState extends ConsumerState<ExploradorScreen> {
             ));
           } else if (tipo == FileSystemEntityType.file) {
             final stat = await File(entrada.path).stat();
-            itens.add(_ItemArquivo(
+            itens.add(ItemArquivo(
               nome: nome,
               caminho: entrada.path,
               ehDiretorio: false,
@@ -159,7 +142,7 @@ class _ExploradorScreenState extends ConsumerState<ExploradorScreen> {
     });
   }
 
-  List<_ItemArquivo> _ordenar(List<_ItemArquivo> itens, ExploradorPrefs prefs) {
+  List<ItemArquivo> _ordenar(List<ItemArquivo> itens, ExploradorPrefs prefs) {
     final copia = [...itens];
     copia.sort((a, b) {
       if (a.ehDiretorio != b.ehDiretorio) return a.ehDiretorio ? -1 : 1;
@@ -177,37 +160,14 @@ class _ExploradorScreenState extends ConsumerState<ExploradorScreen> {
     return copia;
   }
 
-  Future<void> _abrirItem(_ItemArquivo item) async {
+  Future<void> _abrirItem(ItemArquivo item) async {
     if (item.ehDiretorio) {
       _entrarNaPasta(item);
       return;
     }
-    if (ehArquivoDeImagem(item.nome)) {
-      final prefs = ref.read(exploradorPrefsProvider)[_pilha.last.caminho] ??
-          const ExploradorPrefs();
-      final imagens = _ordenar(_itens, prefs)
-          .where((i) => !i.ehDiretorio && ehArquivoDeImagem(i.nome))
-          .map((i) => i.caminho)
-          .toList(growable: false);
-      final indice = imagens.indexOf(item.caminho);
-      await Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (_) => VisualizadorScreen(
-            caminhos: imagens,
-            indiceInicial: indice < 0 ? 0 : indice,
-          ),
-        ),
-      );
-      return;
-    }
-    final resultado = await OpenFilex.open(item.caminho);
-    if (resultado.type != ResultType.done && mounted) {
-      MinhaCaixaDialogo.mostrarSnackBar(
-        context,
-        AppLocalizations.of(context).arquivoNaoAbrir,
-        erro: true,
-      );
-    }
+    final prefs = ref.read(exploradorPrefsProvider)[_pilha.last.caminho] ??
+        const ExploradorPrefs();
+    await abrirArquivo(context, item, _ordenar(_itens, prefs));
   }
 
   // ==================== PREFERÊNCIAS ====================
@@ -409,7 +369,7 @@ class _ExploradorScreenState extends ConsumerState<ExploradorScreen> {
     );
   }
 
-  Widget _construirResumo(BuildContext context, List<_ItemArquivo> itens) {
+  Widget _construirResumo(BuildContext context, List<ItemArquivo> itens) {
     final textos = AppLocalizations.of(context);
     final pastas = itens.where((item) => item.ehDiretorio).length;
     final arquivos = itens.length - pastas;
@@ -428,7 +388,7 @@ class _ExploradorScreenState extends ConsumerState<ExploradorScreen> {
   Widget _construirCorpo(
     AppLocalizations textos,
     ExploradorPrefs prefs,
-    List<_ItemArquivo> itens,
+    List<ItemArquivo> itens,
   ) {
     if (_carregando) {
       return const Center(child: CircularProgressIndicator());
@@ -458,7 +418,7 @@ class _ExploradorScreenState extends ConsumerState<ExploradorScreen> {
         : _construirLista(textos, itens, prefs);
   }
 
-  Widget _construirGrade(ExploradorPrefs prefs, List<_ItemArquivo> itens) {
+  Widget _construirGrade(ExploradorPrefs prefs, List<ItemArquivo> itens) {
     final colunas = prefs.tamanhoMiniatura == 0
         ? 4
         : prefs.tamanhoMiniatura == 1
@@ -508,7 +468,7 @@ class _ExploradorScreenState extends ConsumerState<ExploradorScreen> {
 
   Widget _construirLista(
     AppLocalizations textos,
-    List<_ItemArquivo> itens,
+    List<ItemArquivo> itens,
     ExploradorPrefs prefs,
   ) {
     return ListView.builder(
@@ -539,7 +499,7 @@ class _ExploradorScreenState extends ConsumerState<ExploradorScreen> {
     );
   }
 
-  Widget _miniatura(BuildContext context, _ItemArquivo item, ExploradorPrefs prefs) {
+  Widget _miniatura(BuildContext context, ItemArquivo item, ExploradorPrefs prefs) {
     final esquema = Theme.of(context).colorScheme;
     if (item.ehDiretorio) {
       return _caixaIcone(MdiIcons.folderOutline, esquema.primaryContainer, esquema.onPrimaryContainer);
@@ -576,20 +536,8 @@ class _ExploradorScreenState extends ConsumerState<ExploradorScreen> {
     );
   }
 
-  IconData _iconeDoItem(_ItemArquivo item) {
+  IconData _iconeDoItem(ItemArquivo item) {
     if (item.ehDiretorio) return MdiIcons.folderOutline;
-    final nome = item.nome.toLowerCase();
-    if (ehArquivoDeImagem(nome)) return MdiIcons.imageOutline;
-    if (nome.endsWith('.mp4') || nome.endsWith('.mkv') || nome.endsWith('.mov') || nome.endsWith('.avi')) {
-      return MdiIcons.videoOutline;
-    }
-    if (nome.endsWith('.mp3') || nome.endsWith('.ogg') || nome.endsWith('.wav') || nome.endsWith('.m4a')) {
-      return MdiIcons.musicNoteOutline;
-    }
-    if (nome.endsWith('.pdf')) return MdiIcons.filePdfBox;
-    if (nome.endsWith('.zip') || nome.endsWith('.rar') || nome.endsWith('.7z')) {
-      return MdiIcons.zipBoxOutline;
-    }
-    return MdiIcons.fileOutline;
+    return iconeParaArquivo(item.nome);
   }
 }

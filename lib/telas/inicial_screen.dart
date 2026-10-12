@@ -7,9 +7,11 @@ import 'package:meu_drive/dados/modelos/pasta_syncthing.dart';
 import 'package:meu_drive/dados/provedores/atualizacao_provider.dart';
 import 'package:meu_drive/dados/provedores/motor_provider.dart';
 import 'package:meu_drive/l10n/gerado/app_localizations.dart';
+import 'package:meu_drive/telas/busca_screen.dart';
 import 'package:meu_drive/telas/configuracao_screen.dart';
 import 'package:meu_drive/telas/explorador_screen.dart';
 import 'package:meu_drive/telas/gerenciar_screen.dart';
+import 'package:meu_drive/telas/recentes_screen.dart';
 import 'package:meu_drive/utils_geral/caixa_dialogo.dart';
 import 'package:meu_drive/utils_geral/espaco_aux.dart';
 import 'package:meu_drive/utils_geral/formatadores_aux.dart';
@@ -67,6 +69,16 @@ class _InicialScreenState extends ConsumerState<InicialScreen> with WidgetsBindi
       appBar: AppBar(
         title: Text(textos.appNome),
         actions: [
+          IconButton(
+            tooltip: textos.buscar,
+            onPressed: () => _abrir(context, const BuscaScreen()),
+            icon: const Icon(MdiIcons.magnify),
+          ),
+          IconButton(
+            tooltip: textos.ultimosArquivos,
+            onPressed: () => _abrir(context, const RecentesScreen()),
+            icon: const Icon(MdiIcons.history),
+          ),
           IconButton(
             tooltip: textos.gerenciar,
             onPressed: () => _abrir(context, const GerenciarScreen()),

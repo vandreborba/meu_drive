@@ -155,5 +155,13 @@
   "faseIniciando": "Iniciando",
   "faseConectado": "Conectado",
   "faseParado": "Parado",
-  "faseErro": "Erro"
+  "faseErro": "Erro",
+  "buscar": "Buscar",
+  "buscarDica": "Buscar arquivos",
+  "buscarInstrucao": "Digite o nome de um arquivo para procurar em todo o armazenamento.",
+  "nenhumResultado": "Nenhum arquivo encontrado.",
+  "nResultados": "resultados",
+  "ultimosArquivos": "Últimos arquivos",
+  "nenhumRecente": "Nenhum arquivo recente.",
+  "abrirPasta": "Abrir a pasta"
 }
