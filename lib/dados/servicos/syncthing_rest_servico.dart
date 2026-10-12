@@ -300,6 +300,34 @@ class SyncthingRestServico {
     return jsonDecode(resposta.corpo) as Map<String, dynamic>;
   }
 
+  /// IDs dos dispositivos que estão conectados agora (`connected == true`).
+  Future<Set<String>> dispositivosConectados() async {
+    final resposta = await _requisicao('GET', '/rest/system/connections');
+    if (!resposta.ok) {
+      throw RespostaInvalida('Falha ao ler as conexões (HTTP ${resposta.codigo}).');
+    }
+    final json = jsonDecode(resposta.corpo) as Map<String, dynamic>;
+    final conexoes = (json['connections'] as Map?) ?? const {};
+    final conectados = <String>{};
+    conexoes.forEach((id, dados) {
+      if (dados is Map && dados['connected'] == true) {
+        conectados.add(id.toString());
+      }
+    });
+    return conectados;
+  }
+
+  /// Conclusão (0..100) de uma pasta do ponto de vista de um dispositivo.
+  Future<Map<String, dynamic>> conclusaoPasta(String pastaId, String deviceId) async {
+    final caminho = '/rest/db/completion?folder=${Uri.encodeComponent(pastaId)}'
+        '&device=${Uri.encodeComponent(deviceId)}';
+    final resposta = await _requisicao('GET', caminho);
+    if (!resposta.ok) {
+      throw RespostaInvalida('Falha ao ler a conclusão (HTTP ${resposta.codigo}).');
+    }
+    return jsonDecode(resposta.corpo) as Map<String, dynamic>;
+  }
+
   /// Força uma verificação de mudanças (todas as pastas ou apenas uma).
   Future<void> rescan([String? id]) async {
     final sufixo = id != null ? '?folder=${Uri.encodeComponent(id)}' : '';

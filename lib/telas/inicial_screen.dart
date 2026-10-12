@@ -91,32 +91,52 @@ class _InicialScreenState extends ConsumerState<InicialScreen> with WidgetsBindi
           ),
         ],
       ),
-      body: switch (estado.fase) {
+      body: _construirCorpo(context, textos, estado, notificador),
+    );
+  }
+
+  /// Escolhe o conteúdo sem travar a abertura: se já há pastas conhecidas
+  /// (cache), o app abre direto no conteúdo e sincroniza em segundo plano.
+  Widget _construirCorpo(
+    BuildContext context,
+    AppLocalizations textos,
+    EstadoMotor estado,
+    MotorNotifier notificador,
+  ) {
+    if (estado.fase == FaseMotor.precisaPermissao) {
+      return _CartaoMensagem(
+        icone: MdiIcons.shieldAlertOutline,
+        titulo: textos.permissaoTitulo,
+        mensagem: textos.permissaoTexto,
+        acoes: [
+          FilledButton.icon(
+            onPressed: notificador.concederPermissaoArquivos,
+            icon: const Icon(MdiIcons.check),
+            label: Text(textos.concederPermissao),
+          ),
+        ],
+      );
+    }
+    // Sem pastas conhecidas ainda, mostra o progresso/estado do motor.
+    if (estado.pastas.isEmpty && estado.fase != FaseMotor.conectado) {
+      return switch (estado.fase) {
         FaseMotor.verificando => _Progresso(texto: textos.verificandoMotor),
-        FaseMotor.precisaPermissao => _CartaoMensagem(
-            icone: MdiIcons.shieldAlertOutline,
-            titulo: textos.permissaoTitulo,
-            mensagem: textos.permissaoTexto,
-            acoes: [
-              FilledButton.icon(
-                onPressed: notificador.concederPermissaoArquivos,
-                icon: const Icon(MdiIcons.check),
-                label: Text(textos.concederPermissao),
-              ),
-            ],
-          ),
-        FaseMotor.iniciando => _Progresso(texto: textos.iniciandoMotor),
         FaseMotor.parado => _Parado(onAcordar: notificador.acordarEConectar),
-        FaseMotor.erro => _Erro(mensagem: estado.erro, onTentar: notificador.acordarEConectar),
-        FaseMotor.conectado => _CorpoConectado(
-            estado: estado,
-            onExplorarCelular: () => _explorar(context, _caminhoCelular, textos.explorarCelular),
-            onAbrirPasta: (pasta) => _explorar(context, pasta.caminho, pasta.nomeAmigavel),
-            onConcederPermissao: notificador.concederPermissaoArquivos,
-            onVerificar: notificador.verificarMudancas,
-            onGerenciar: () => _abrir(context, const GerenciarScreen()),
+        FaseMotor.erro => _Erro(
+            mensagem: estado.erro,
+            onTentar: notificador.acordarEConectar,
           ),
-      },
+        _ => _Progresso(texto: textos.iniciandoMotor),
+      };
+    }
+    return _CorpoConectado(
+      estado: estado,
+      onExplorarCelular: () => _explorar(context, _caminhoCelular, textos.explorarCelular),
+      onAbrirPasta: (pasta) => _explorar(context, pasta.caminho, pasta.nomeAmigavel),
+      onConcederPermissao: notificador.concederPermissaoArquivos,
+      onVerificar: notificador.verificarMudancas,
+      onGerenciar: () => _abrir(context, const GerenciarScreen()),
+      onAcordar: notificador.acordarEConectar,
     );
   }
 
@@ -250,6 +270,7 @@ class _CorpoConectado extends StatelessWidget {
   final Future<void> Function() onConcederPermissao;
   final Future<void> Function([String? id]) onVerificar;
   final VoidCallback onGerenciar;
+  final Future<void> Function() onAcordar;
 
   const _CorpoConectado({
     required this.estado,
@@ -258,6 +279,7 @@ class _CorpoConectado extends StatelessWidget {
     required this.onConcederPermissao,
     required this.onVerificar,
     required this.onGerenciar,
+    required this.onAcordar,
   });
 
   @override
@@ -270,6 +292,10 @@ class _CorpoConectado extends StatelessWidget {
         children: [
           if (!estado.temPermissaoArquivos) ...[
             _AvisoPermissao(onConceder: onConcederPermissao),
+            const SizedBox(height: 12),
+          ],
+          if (estado.fase == FaseMotor.parado || estado.fase == FaseMotor.erro) ...[
+            _BannerMotor(estado: estado, onAcordar: onAcordar),
             const SizedBox(height: 12),
           ],
           _ResumoMotor(estado: estado),
@@ -303,11 +329,11 @@ class _CorpoConectado extends StatelessWidget {
               onTap: onExplorarCelular,
             ),
           ),
-          if (estado.atualizadoEm != null)
+          if (_textoRodape(textos, estado) != null)
             Padding(
               padding: const EdgeInsets.only(top: 14),
               child: Text(
-                '${textos.atualizadoEm} ${formatarHora(estado.atualizadoEm!)}',
+                _textoRodape(textos, estado)!,
                 style: Theme.of(context).textTheme.bodySmall,
                 textAlign: TextAlign.center,
               ),
@@ -315,6 +341,27 @@ class _CorpoConectado extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  /// Rodapé honesto: só afirma "sincronizado" com par conectado e em dia.
+  /// Fora de casa (sem computador conectado), mostra offline e o horário do
+  /// último sync realmente verificado.
+  String? _textoRodape(AppLocalizations textos, EstadoMotor estado) {
+    if (estado.emDiaComPares && estado.atualizadoEm != null) {
+      final nomes = estado.nomesConectados.join(', ');
+      return '${textos.sincronizadoCom} $nomes · ${textos.atualizadoEm} '
+          '${formatarHora(estado.atualizadoEm!)}';
+    }
+    if (estado.temParConectado) {
+      final nomes = estado.nomesConectados.join(', ');
+      return '${textos.sincronizandoCom} $nomes...';
+    }
+    if (!estado.temParesConfigurados) return null;
+    final ultima = estado.ultimaSincronizacao;
+    return ultima == null
+        ? textos.offlineSemSincronizacao
+        : '${textos.offlineSemSincronizacao} · ${textos.ultimaSincronizacaoEm} '
+            '${formatarDataHora(ultima)}';
   }
 }
 
@@ -334,14 +381,37 @@ class _ResumoMotor extends StatelessWidget {
     final IconData icone;
     final Color cor;
     final String titulo;
-    if (estado.sincronizacaoPausada) {
+    var mostrarProgresso = false;
+    if (estado.conectando) {
+      icone = MdiIcons.sync;
+      cor = esquema.tertiary;
+      titulo = textos.iniciandoMotor;
+      mostrarProgresso = true;
+    } else if (estado.fase == FaseMotor.parado) {
+      icone = MdiIcons.pauseCircleOutline;
+      cor = esquema.outline;
+      titulo = textos.desconectado;
+    } else if (estado.fase == FaseMotor.erro) {
+      icone = MdiIcons.alertCircleOutline;
+      cor = esquema.error;
+      titulo = textos.erroTitulo;
+    } else if (estado.sincronizacaoPausada) {
       icone = MdiIcons.pauseCircleOutline;
       cor = esquema.outline;
       titulo = textos.sincronizacaoPausada;
-    } else if (sincronizando) {
+    } else if (estado.emDiaComPares) {
+      icone = MdiIcons.checkCircleOutline;
+      cor = esquema.primary;
+      titulo = textos.tudoSincronizado;
+    } else if (estado.temParConectado || sincronizando) {
       icone = MdiIcons.sync;
       cor = esquema.tertiary;
       titulo = textos.sincronizandoAgora;
+      mostrarProgresso = true;
+    } else if (estado.temParesConfigurados) {
+      icone = MdiIcons.cloudOffOutline;
+      cor = esquema.outline;
+      titulo = textos.semConexao;
     } else {
       icone = MdiIcons.checkCircleOutline;
       cor = esquema.primary;
@@ -372,12 +442,71 @@ class _ResumoMotor extends StatelessWidget {
                 ],
               ),
             ),
-            if (sincronizando)
+            if (mostrarProgresso)
               const SizedBox(
                 width: 22,
                 height: 22,
                 child: CircularProgressIndicator(strokeWidth: 2.5),
               ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Aviso de motor parado/em erro, com ação para tentar de novo.
+class _BannerMotor extends StatelessWidget {
+  final EstadoMotor estado;
+  final Future<void> Function() onAcordar;
+
+  const _BannerMotor({required this.estado, required this.onAcordar});
+
+  @override
+  Widget build(BuildContext context) {
+    final textos = AppLocalizations.of(context);
+    final esquema = Theme.of(context).colorScheme;
+    final parado = estado.fase == FaseMotor.parado;
+    final mensagem = parado
+        ? textos.motorParadoTexto
+        : (estado.erro ?? textos.estadoDesconhecido);
+    return Card(
+      color: esquema.secondaryContainer,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  parado ? MdiIcons.pauseCircleOutline : MdiIcons.alertCircleOutline,
+                  color: esquema.onSecondaryContainer,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  parado ? textos.desconectado : textos.erroTitulo,
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleMedium
+                      ?.copyWith(color: esquema.onSecondaryContainer),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              mensagem,
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(color: esquema.onSecondaryContainer),
+            ),
+            const SizedBox(height: 12),
+            FilledButton.icon(
+              onPressed: onAcordar,
+              icon: const Icon(MdiIcons.power),
+              label: Text(textos.acordarMotor),
+            ),
           ],
         ),
       ),

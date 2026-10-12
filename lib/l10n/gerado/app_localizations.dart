@@ -226,6 +226,36 @@ abstract class AppLocalizations {
   /// **'Atualizado em'**
   String get atualizadoEm;
 
+  /// No description provided for @sincronizadoCom.
+  ///
+  /// In pt, this message translates to:
+  /// **'Sincronizado com'**
+  String get sincronizadoCom;
+
+  /// No description provided for @sincronizandoCom.
+  ///
+  /// In pt, this message translates to:
+  /// **'Sincronizando com'**
+  String get sincronizandoCom;
+
+  /// No description provided for @semConexao.
+  ///
+  /// In pt, this message translates to:
+  /// **'Sem conexão'**
+  String get semConexao;
+
+  /// No description provided for @offlineSemSincronizacao.
+  ///
+  /// In pt, this message translates to:
+  /// **'Offline — sem sincronização'**
+  String get offlineSemSincronizacao;
+
+  /// No description provided for @ultimaSincronizacaoEm.
+  ///
+  /// In pt, this message translates to:
+  /// **'Última sincronização em'**
+  String get ultimaSincronizacaoEm;
+
   /// No description provided for @ok.
   ///
   /// In pt, this message translates to:

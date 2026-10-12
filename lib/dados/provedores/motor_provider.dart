@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -25,7 +26,25 @@ class EstadoMotor {
   final List<String> diagnostico;
   final String? erro;
   final DateTime? atualizadoEm;
+
+  /// Último horário em que o sync com os computadores foi verificado em dia.
+  /// Persistido, para mostrar quando estiver offline.
+  final DateTime? ultimaSincronizacao;
+
+  /// Há ao menos um computador conectado agora.
+  final bool temParConectado;
+
+  /// Todos os computadores conectados estão em dia (100%) com este aparelho.
+  final bool emDiaComPares;
+
+  /// IDs dos computadores conectados agora.
+  final List<String> dispositivosConectados;
+
   final bool temPermissaoArquivos;
+
+  /// `true` enquanto o motor está sendo iniciado/conectado. Com pastas em cache
+  /// a interface já aparece; isto só indica que a conexão está em andamento.
+  final bool conectando;
 
   const EstadoMotor({
     required this.fase,
@@ -37,7 +56,12 @@ class EstadoMotor {
     this.diagnostico = const [],
     this.erro,
     this.atualizadoEm,
+    this.ultimaSincronizacao,
+    this.temParConectado = false,
+    this.emDiaComPares = false,
+    this.dispositivosConectados = const [],
     this.temPermissaoArquivos = false,
+    this.conectando = false,
   });
 
   static const EstadoMotor inicial = EstadoMotor(fase: FaseMotor.verificando);
@@ -45,6 +69,22 @@ class EstadoMotor {
   /// Considera a sincronização pausada quando todas as pastas estão pausadas.
   bool get sincronizacaoPausada =>
       pastas.isNotEmpty && pastas.every((pasta) => pasta.pausada);
+
+  /// Há ao menos um computador configurado para sincronizar alguma pasta.
+  bool get temParesConfigurados =>
+      pastas.any((pasta) => pasta.dispositivos.isNotEmpty);
+
+  /// Nomes amigáveis dos computadores conectados agora, para a interface.
+  List<String> get nomesConectados {
+    final nomes = <String>[];
+    for (final id in dispositivosConectados) {
+      final encontrados = dispositivos.where((dispositivo) => dispositivo.id == id);
+      nomes.add(encontrados.isNotEmpty
+          ? encontrados.first.nome
+          : (id.length > 7 ? id.substring(0, 7).toUpperCase() : id.toUpperCase()));
+    }
+    return nomes;
+  }
 
   EstadoMotor copyWith({
     FaseMotor? fase,
@@ -57,7 +97,13 @@ class EstadoMotor {
     String? erro,
     bool limparErro = false,
     DateTime? atualizadoEm,
+    bool limparAtualizadoEm = false,
+    DateTime? ultimaSincronizacao,
+    bool? temParConectado,
+    bool? emDiaComPares,
+    List<String>? dispositivosConectados,
     bool? temPermissaoArquivos,
+    bool? conectando,
   }) {
     return EstadoMotor(
       fase: fase ?? this.fase,
@@ -68,8 +114,13 @@ class EstadoMotor {
       estados: estados ?? this.estados,
       diagnostico: diagnostico ?? this.diagnostico,
       erro: limparErro ? null : (erro ?? this.erro),
-      atualizadoEm: atualizadoEm ?? this.atualizadoEm,
+      atualizadoEm: limparAtualizadoEm ? null : (atualizadoEm ?? this.atualizadoEm),
+      ultimaSincronizacao: ultimaSincronizacao ?? this.ultimaSincronizacao,
+      temParConectado: temParConectado ?? this.temParConectado,
+      emDiaComPares: emDiaComPares ?? this.emDiaComPares,
+      dispositivosConectados: dispositivosConectados ?? this.dispositivosConectados,
       temPermissaoArquivos: temPermissaoArquivos ?? this.temPermissaoArquivos,
+      conectando: conectando ?? this.conectando,
     );
   }
 }
@@ -82,6 +133,10 @@ class MotorNotifier extends Notifier<EstadoMotor> {
 
   SyncthingRestServico? _rest;
   Timer? _poll;
+
+  /// Último valor gravado em disco de [EstadoMotor.ultimaSincronizacao], para
+  /// limitar as escritas no armazenamento a uma por minuto.
+  DateTime? _ultimaSincronizacaoPersistida;
 
   @override
   EstadoMotor build() {
@@ -106,7 +161,12 @@ class MotorNotifier extends Notifier<EstadoMotor> {
 
   Future<void> inicializar() async {
     await atualizarPermissaoArquivos();
-    state = state.copyWith(fase: FaseMotor.verificando, limparErro: true);
+    _ultimaSincronizacaoPersistida = await _armazenamento.lerUltimaSincronizacao();
+    state = state.copyWith(
+      fase: FaseMotor.verificando,
+      limparErro: true,
+      ultimaSincronizacao: _ultimaSincronizacaoPersistida,
+    );
     _log('Preparando o motor...');
     if (!state.temPermissaoArquivos) {
       // Sem acesso aos arquivos não dá para importar a config do Syncthing-Fork
@@ -119,6 +179,10 @@ class MotorNotifier extends Notifier<EstadoMotor> {
     final importou = await _ponte.importarConfigMotor();
     if (importou) {
       _log('Configuração do Syncthing-Fork importada (mesmo device ID).');
+    } else {
+      // Mostra as pastas conhecidas de imediato; a conexão segue em segundo
+      // plano, sem travar a abertura do app.
+      await _carregarCache();
     }
     await acordarEConectar();
   }
@@ -137,7 +201,15 @@ class MotorNotifier extends Notifier<EstadoMotor> {
     _pararPoll();
     _rest?.fechar();
     _rest = null;
-    state = state.copyWith(fase: FaseMotor.iniciando, limparErro: true);
+    state = state.copyWith(
+      fase: FaseMotor.iniciando,
+      limparErro: true,
+      conectando: true,
+      limparAtualizadoEm: true,
+      temParConectado: false,
+      emDiaComPares: false,
+      dispositivosConectados: const [],
+    );
 
     _log('Iniciando o motor...');
     try {
@@ -148,6 +220,7 @@ class MotorNotifier extends Notifier<EstadoMotor> {
       state = state.copyWith(
         fase: FaseMotor.erro,
         erro: 'O motor será iniciado quando o app estiver aberto.',
+        conectando: false,
       );
       return;
     }
@@ -168,7 +241,11 @@ class MotorNotifier extends Notifier<EstadoMotor> {
     } on RespostaInvalida catch (e) {
       rest.fechar();
       _log('Falha de acesso: ${e.mensagem}');
-      state = state.copyWith(fase: FaseMotor.erro, erro: e.mensagem);
+      state = state.copyWith(
+        fase: FaseMotor.erro,
+        erro: e.mensagem,
+        conectando: false,
+      );
       return;
     } on MotorIndisponivel catch (e) {
       for (final tentativa in rest.ultimasTentativas) {
@@ -177,13 +254,21 @@ class MotorNotifier extends Notifier<EstadoMotor> {
       await _anexarLogMotor();
       rest.fechar();
       _log('Motor indisponível: ${e.mensagem}');
-      state = state.copyWith(fase: FaseMotor.erro, erro: e.mensagem);
+      state = state.copyWith(
+        fase: FaseMotor.erro,
+        erro: e.mensagem,
+        conectando: false,
+      );
       return;
     } catch (e) {
       await _anexarLogMotor();
       rest.fechar();
       _log('Erro ao conectar: $e');
-      state = state.copyWith(fase: FaseMotor.erro, erro: e.toString());
+      state = state.copyWith(
+        fase: FaseMotor.erro,
+        erro: e.toString(),
+        conectando: false,
+      );
       return;
     }
 
@@ -205,8 +290,10 @@ class MotorNotifier extends Notifier<EstadoMotor> {
         meuId: meuId,
         meuNome: _nomeDoMeuAparelho(dispositivos, meuId),
         limparErro: true,
+        conectando: false,
       );
       _log('Config lida: ${pastas.length} pasta(s), ${dispositivos.length} computador(es).');
+      await _persistirCache();
       await _atualizarEstados();
       _iniciarPoll();
       try {
@@ -219,7 +306,59 @@ class MotorNotifier extends Notifier<EstadoMotor> {
       await _anexarLogMotor();
       rest.fechar();
       _log('Falha ao ler a configuração: $e');
-      state = state.copyWith(fase: FaseMotor.erro, erro: e.toString());
+      state = state.copyWith(
+        fase: FaseMotor.erro,
+        erro: e.toString(),
+        conectando: false,
+      );
+    }
+  }
+
+  // ==================== CACHE ====================
+
+  /// Restaura pastas/dispositivos conhecidos para abrir o app já com conteúdo.
+  Future<void> _carregarCache() async {
+    final json = await _armazenamento.lerCacheMotorJson();
+    if (json == null || json.isEmpty) return;
+    try {
+      final mapa = jsonDecode(json) as Map<String, dynamic>;
+      final pastas = ((mapa['pastas'] as List?) ?? const [])
+          .whereType<Map<String, dynamic>>()
+          .map(PastaSyncthing.doJson)
+          .where((pasta) => pasta.id.isNotEmpty)
+          .toList(growable: false);
+      if (pastas.isEmpty) return;
+      final dispositivos = ((mapa['dispositivos'] as List?) ?? const [])
+          .whereType<Map<String, dynamic>>()
+          .map(DispositivoSyncthing.doJson)
+          .toList(growable: false);
+      state = state.copyWith(
+        pastas: pastas,
+        dispositivos: dispositivos,
+        meuId: mapa['meuId'] as String?,
+        meuNome: mapa['meuNome'] as String?,
+        conectando: true,
+      );
+      _log('${pastas.length} pasta(s) carregada(s) do cache.');
+    } catch (_) {
+      // Cache inválido: ignora e segue sem conteúdo imediato.
+    }
+  }
+
+  /// Grava o cache de pastas/dispositivos para a próxima abertura.
+  Future<void> _persistirCache() async {
+    try {
+      final json = jsonEncode({
+        'pastas': [for (final pasta in state.pastas) pasta.paraJson()],
+        'dispositivos': [
+          for (final dispositivo in state.dispositivos) dispositivo.paraJson(),
+        ],
+        'meuId': state.meuId,
+        'meuNome': state.meuNome,
+      });
+      await _armazenamento.salvarCacheMotorJson(json);
+    } catch (_) {
+      // Cache é otimização; falhar não deve quebrar o fluxo.
     }
   }
 
@@ -281,7 +420,9 @@ class MotorNotifier extends Notifier<EstadoMotor> {
         meuId: meuId,
         meuNome: _nomeDoMeuAparelho(dispositivos, meuId),
         limparErro: true,
+        conectando: false,
       );
+      await _persistirCache();
       await _atualizarEstados();
     } catch (e) {
       _log('Falha ao recarregar: $e');
@@ -312,6 +453,11 @@ class MotorNotifier extends Notifier<EstadoMotor> {
       pastas: const [],
       estados: const {},
       limparErro: true,
+      conectando: false,
+      limparAtualizadoEm: true,
+      temParConectado: false,
+      emDiaComPares: false,
+      dispositivosConectados: const [],
     );
   }
 
@@ -516,9 +662,12 @@ class MotorNotifier extends Notifier<EstadoMotor> {
 
   // ==================== POLL DE ESTADO ====================
 
+  /// `/rest/db/status` é caro; damos um intervalo maior que o antigo (4 s).
+  static const Duration _intervaloPoll = Duration(seconds: 10);
+
   void _iniciarPoll() {
     _poll?.cancel();
-    _poll = Timer.periodic(const Duration(seconds: 4), (_) => _atualizarEstados());
+    _poll = Timer.periodic(_intervaloPoll, (_) => _atualizarEstados());
   }
 
   void _pararPoll() {
@@ -529,6 +678,7 @@ class MotorNotifier extends Notifier<EstadoMotor> {
   Future<void> _atualizarEstados() async {
     final rest = _rest;
     if (rest == null) return;
+
     final novos = <String, EstadoPasta>{};
     for (final pasta in state.pastas) {
       try {
@@ -538,7 +688,72 @@ class MotorNotifier extends Notifier<EstadoMotor> {
         novos[pasta.id] = EstadoPasta.desconhecido;
       }
     }
-    state = state.copyWith(estados: novos, atualizadoEm: DateTime.now());
+
+    // Quem está conectado agora, entre os computadores que compartilham pasta.
+    final paresRelevantes = <String>{
+      for (final pasta in state.pastas)
+        for (final deviceId in pasta.dispositivos)
+          if (deviceId.isNotEmpty && deviceId != state.meuId) deviceId,
+    };
+    Set<String> conectados;
+    try {
+      conectados =
+          (await rest.dispositivosConectados()).where(paresRelevantes.contains).toSet();
+    } catch (_) {
+      conectados = const {};
+    }
+    final temParConectado = conectados.isNotEmpty;
+
+    // "Em dia" exige par conectado, nada sincronizando e conclusão 100% em
+    // todas as pastas compartilhadas com esses pares.
+    var emDia = temParConectado;
+    if (temParConectado) {
+      if (novos.values.any((estado) => estado.fase == FasePasta.sincronizando)) {
+        emDia = false;
+      }
+      for (final pasta in state.pastas) {
+        if (!emDia) break;
+        if (pasta.pausada) continue;
+        for (final deviceId in pasta.dispositivos) {
+          if (!conectados.contains(deviceId)) continue;
+          try {
+            final conclusao = await rest.conclusaoPasta(pasta.id, deviceId);
+            final percentual = (conclusao['completion'] as num?)?.toDouble() ?? 0;
+            final estadoRemoto = (conclusao['remoteState'] ?? '').toString();
+            if (percentual < 99.999 || (estadoRemoto.isNotEmpty && estadoRemoto != 'valid')) {
+              emDia = false;
+              break;
+            }
+          } catch (_) {
+            emDia = false;
+            break;
+          }
+        }
+      }
+    }
+
+    DateTime? atualizadoEm;
+    var ultima = state.ultimaSincronizacao;
+    if (emDia) {
+      final agora = DateTime.now();
+      atualizadoEm = agora;
+      ultima = agora;
+      final persistida = _ultimaSincronizacaoPersistida;
+      if (persistida == null || agora.difference(persistida).inMinutes >= 1) {
+        _ultimaSincronizacaoPersistida = agora;
+        unawaited(_armazenamento.salvarUltimaSincronizacao(agora));
+      }
+    }
+
+    state = state.copyWith(
+      estados: novos,
+      atualizadoEm: atualizadoEm,
+      limparAtualizadoEm: atualizadoEm == null,
+      ultimaSincronizacao: ultima,
+      temParConectado: temParConectado,
+      emDiaComPares: emDia,
+      dispositivosConectados: conectados.toList(growable: false),
+    );
   }
 }
 

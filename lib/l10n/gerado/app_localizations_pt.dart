@@ -76,6 +76,21 @@ class AppLocalizationsPt extends AppLocalizations {
   String get atualizadoEm => 'Atualizado em';
 
   @override
+  String get sincronizadoCom => 'Sincronizado com';
+
+  @override
+  String get sincronizandoCom => 'Sincronizando com';
+
+  @override
+  String get semConexao => 'Sem conexão';
+
+  @override
+  String get offlineSemSincronizacao => 'Offline — sem sincronização';
+
+  @override
+  String get ultimaSincronizacaoEm => 'Última sincronização em';
+
+  @override
   String get ok => 'OK';
 
   @override

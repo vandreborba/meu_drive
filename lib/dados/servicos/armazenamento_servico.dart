@@ -9,6 +9,26 @@ class ArmazenamentoServico {
   static const String _chavePortaGui = 'porta_gui';
   static const String _chaveTema = 'tema';
   static const String _chaveExploradorPorPasta = 'explorador_por_pasta';
+  static const String _chaveCacheMotor = 'cache_motor';
+  static const String _chaveUltimaSincronizacao = 'ultima_sincronizacao';
+
+  /// Pastas/dispositivos conhecidos do motor, para abrir o app sem esperar a
+  /// conexão (sincroniza em segundo plano).
+  Future<String?> lerCacheMotorJson() async =>
+      (await SharedPreferences.getInstance()).getString(_chaveCacheMotor);
+
+  Future<void> salvarCacheMotorJson(String json) async =>
+      (await SharedPreferences.getInstance()).setString(_chaveCacheMotor, json);
+
+  /// Horário do último sync realmente verificado com os computadores.
+  Future<DateTime?> lerUltimaSincronizacao() async {
+    final ms = (await SharedPreferences.getInstance()).getInt(_chaveUltimaSincronizacao);
+    return ms == null ? null : DateTime.fromMillisecondsSinceEpoch(ms);
+  }
+
+  Future<void> salvarUltimaSincronizacao(DateTime quando) async =>
+      (await SharedPreferences.getInstance())
+          .setInt(_chaveUltimaSincronizacao, quando.millisecondsSinceEpoch);
 
   /// Preferências do explorador por diretório, como JSON.
   Future<String?> lerExploradorJson() async =>

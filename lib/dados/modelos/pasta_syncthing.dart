@@ -54,6 +54,20 @@ class PastaSyncthing {
     return int.tryParse(valor?.toString() ?? '') ?? padrao;
   }
 
+  /// Serializa no mesmo formato lido por [doJson] (para o cache local).
+  Map<String, dynamic> paraJson() => {
+        'id': id,
+        'label': rotulo,
+        'path': caminho,
+        'type': tipo,
+        'paused': pausada,
+        'devices': [
+          for (final dispositivo in dispositivos) {'deviceID': dispositivo},
+        ],
+        'rescanIntervalS': rescanIntervaloS,
+        'fsWatcherEnabled': fsWatcherEnabled,
+      };
+
   /// O motor pode guardar caminhos com `~/`; no Android isso equivale ao
   /// armazenamento compartilhado principal.
   static String expandirCaminhoSyncthing(String caminho) {

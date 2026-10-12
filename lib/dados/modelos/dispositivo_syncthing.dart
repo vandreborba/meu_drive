@@ -19,6 +19,9 @@ class DispositivoSyncthing {
     return id.substring(0, 7).toUpperCase();
   }
 
+  /// Serializa no mesmo formato lido por [doJson] (para o cache local).
+  Map<String, dynamic> paraJson() => {'deviceID': id, 'name': nome};
+
   /// ID abreviado, como o Syncthing mostra na interface.
   String get idCurto => _abreviar(id);
 }
